@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.5 — Backend : stock** : en cours.
+**Étape 6.6 — Backend : panier** : en cours.
+
+- Étape 6.5 — Stock : **validée le 2026-10-26**.
 
 - Étape 6.4 — Produits, contenances et images : **validée le 2026-10-26**.
 
@@ -73,6 +75,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/tests/test_auth.py`, `backend/tests/test_staff.py` (6.2, commité)
 - `backend/app/core/slug.py`, `backend/app/modules/catalog/{schemas,taxonomy,router}.py`, `backend/tests/test_taxonomy.py` — collections et familles (6.3, commité)
 - `backend/app/core/{storage,images}.py`, `backend/app/modules/catalog/{products,queries,products_router}.py`, `backend/tests/test_products.py` — produits, contenances, images, catalogue public (6.4, commité)
+- `backend/app/modules/inventory/{service,schemas,router}.py`, `backend/tests/test_stock.py` — stock : entrées, ajustements, historique, alertes de seuil, fonctions atomiques réserver / libérer / sortir / retour / perte (6.5, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -99,6 +102,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.3 : appels réels via le relais | listes publiques 200, collection inconnue 404, écriture anonyme 401 |
 | 2026-10-26 | CI GitHub (commit 6.3) | backend, frontend, e2e : verts |
 | 2026-10-26 | 6.4 : `pytest` | 75/75 réussis |
+| 2026-10-26 | 6.5 : `pytest` | 89/89 réussis (dont 12 commandes simultanées sur le dernier flacon : 1 réussite, 11 refus ; relancé 5 fois) |
+| 2026-10-26 | 6.5 : démonstration réelle via le relais (base de dev, données supprimées ensuite) | stock initial 6 ; entrée +10 ; ajustement sans motif refusé (422) ; ajustement −11 → disponible 5, alerte au tableau de bord et e-mail « Stock bas » (console) ; suppression d'un parfum avec historique refusée (409) |
 | 2026-10-26 | 6.4 : démonstration réelle via le relais (base de dev, données supprimées ensuite) | connexion 2FA ; publication refusée sans contenance/image (409) ; JPEG 2400×3000 de 110 Ko → WebP 1600×2000 de 5 Ko ; recherche « demonstration » trouve « Démonstration » ; suppression → image 404 |
 | — | E2E Playwright | non exécuté en local (Chromium indisponible sur macOS 13) → job `e2e` de la CI, pas encore exécuté (dépôt non poussé) |
 
@@ -116,6 +121,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 6.5 : stock (entrées, ajustements avec motif, historique des mouvements, alertes de seuil, fonctions atomiques de réservation / libération / sortie / retour réutilisées par les commandes).
+Étape 6.6 : panier (invité et connecté, contrôle du disponible et du maximum de 5 unités par contenance, prix toujours recalculés côté serveur).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

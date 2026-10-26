@@ -102,6 +102,7 @@ class VariantIn(BaseModel):
     cost_price: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
     low_stock_threshold: Annotated[int, Field(ge=0, le=1000)] = 5
     is_active: bool = True
+    initial_stock: Annotated[int, Field(ge=0, le=100_000)] = 0  # mouvement « Entrée »
 
 
 class VariantPatch(BaseModel):

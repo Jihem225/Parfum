@@ -17,6 +17,7 @@ from app.modules.catalog.products_router import admin as products_admin_router
 from app.modules.catalog.products_router import public as products_router
 from app.modules.catalog.router import admin as catalog_admin_router
 from app.modules.catalog.router import public as catalog_router
+from app.modules.inventory.router import admin as stock_admin_router
 from app.modules.staff.router import router as staff_router
 
 is_prod = settings.app_env == "production"
@@ -48,6 +49,7 @@ api.include_router(catalog_router)
 api.include_router(catalog_admin_router)
 api.include_router(products_router)
 api.include_router(products_admin_router)
+api.include_router(stock_admin_router)
 app.include_router(api)
 
 # Images du stockage local (développement) ; en production elles seront servies par R2.

@@ -32,7 +32,7 @@ def product_counts(db: Session, model: TaxonModel) -> dict[int, int]:
         .where(Product.status == ProductStatus.PUBLISHED)
         .group_by(column)
     )
-    return {taxon_id: count for taxon_id, count in rows.tuples()}
+    return {taxon_id: count for taxon_id, count in rows}
 
 
 def snapshot(taxon: Taxon) -> dict[str, Any]:

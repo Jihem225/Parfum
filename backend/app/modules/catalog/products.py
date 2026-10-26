@@ -23,6 +23,7 @@ from app.modules.catalog.models import (
     ProductVariant,
 )
 from app.modules.catalog.schemas import AdminProductOut, AdminVariantOut, ImageOut, StockStatus
+from app.modules.inventory import service as inventory
 from app.modules.inventory.models import StockMovement
 from app.modules.orders.models import OrderItem
 
@@ -199,6 +200,7 @@ def get_variant(db: Session, variant_id: int) -> ProductVariant:
 def add_variant(
     db: Session, product: Product, data: dict[str, Any], *, actor_id: int
 ) -> ProductVariant:
+    initial_stock = data.pop("initial_stock", 0)
     variant = ProductVariant(product_id=product.id, **data)
     db.add(variant)
     _flush(db)
@@ -210,6 +212,8 @@ def add_variant(
         entity_id=variant.id,
         after=_snapshot(variant, VARIANT_KEYS),
     )
+    if initial_stock:
+        inventory.receive(db, variant, initial_stock, "Stock initial", user_id=actor_id)
     return variant
 
 
