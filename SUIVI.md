@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 7 — Frontend** : en cours. Le porteur a demandé d'enchaîner toutes les sous-étapes 7.1 à 7.5 sans validation intermédiaire (« vas-y fais toutes les étapes de l'étape 7 ») ; rapport unique en fin d'étape 7.
+**Étape 8 — Intégration et tests complets** : réalisée le 2026-10-26, **en attente de validation**.
+
+- Étape 7 — Frontend : **validée le 2026-10-26** (« lance l'étape suivante »). Sous-étapes 7.1 à 7.5 enchaînées sans validation intermédiaire à la demande du porteur.
 
 - Étape 6.10 — Pilotage et compléments du back-office : **validée le 2026-10-26** (6.10 promos et 6.11 avis/favoris du prompt maître : hors MVP). **Étape 6 (backend) terminée.**
 
@@ -97,7 +99,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
   - 7.3 compte `src/app/(boutique)/compte/` : connexion, inscription, mot de passe oublié / réinitialisation, profil, adresses, commandes (+ annulation) ;
   - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
   - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
-  - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` (Playwright, CI).
+  - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` + `e2e/order.ts` (Playwright, CI ; étape 8 : recherche, rupture, annulation client, accès back-office).
 - `backend/app/scripts/seed_demo.py` — catalogue d'exemple fictif (+ comptes de test E2E si variables fournies) ; route `GET /admin/couriers` ; `variant_id` sur les lignes de commande.
 
 ## Tests exécutés
@@ -137,7 +139,29 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.5 : `pytest` | 89/89 réussis (dont 12 commandes simultanées sur le dernier flacon : 1 réussite, 11 refus ; relancé 5 fois) |
 | 2026-10-26 | 6.5 : démonstration réelle via le relais (base de dev, données supprimées ensuite) | stock initial 6 ; entrée +10 ; ajustement sans motif refusé (422) ; ajustement −11 → disponible 5, alerte au tableau de bord et e-mail « Stock bas » (console) ; suppression d'un parfum avec historique refusée (409) |
 | 2026-10-26 | 6.4 : démonstration réelle via le relais (base de dev, données supprimées ensuite) | connexion 2FA ; publication refusée sans contenance/image (409) ; JPEG 2400×3000 de 110 Ko → WebP 1600×2000 de 5 Ko ; recherche « demonstration » trouve « Démonstration » ; suppression → image 404 |
-| — | E2E Playwright | non exécuté en local (Chromium indisponible sur macOS 13) → job `e2e` de la CI, pas encore exécuté (dépôt non poussé) |
+| 2026-10-26 | Étape 7 : backend `pytest` / frontend Vitest / lint / typecheck / build | 137/137 / 11/11 / OK / OK / 50 pages |
+| 2026-10-26 | Étape 8 : backend `pytest`, `ruff`, `mypy` (local) | 137/137 réussis ; OK ; OK |
+| 2026-10-26 | Étape 8 : CI GitHub run 40349531610 (commit d982476) | backend, frontend, e2e : verts ; **E2E 18/18 réussis** (9 parcours × mobile Pixel 7 + ordinateur), 0 échec, 0 relance |
+| — | E2E Playwright | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
+
+## Étape 8 — matrice des parcours
+
+Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; **E2E** = Playwright dans un vrai navigateur (CI), sur mobile et ordinateur.
+
+| Parcours | Couvert par | Résultat |
+|---|---|---|
+| Recherche d'un parfum | API `test_search_ignores_accents_and_case` ; E2E « recherche sans accents » | réussi |
+| Ajout au panier | API `test_cart.py` ; E2E « commande sans compte » | réussi |
+| Vérification du stock | API `test_stock.py` (dont 12 achats simultanés du dernier flacon), `test_cart.py` ; E2E « rupture de stock affichée » | réussi |
+| Création et confirmation de commande | API `test_orders.py` (dont validations simultanées) ; E2E « commande sans compte » + back-office (Confirmée) | réussi |
+| Paiement en test | — | **non applicable** : MVP en paiement à la livraison, aucun prestataire intégré. Encaissement espèces couvert (API `test_cash.py`, E2E remise en caisse) |
+| Préparation et livraison | API `test_cash.py`, `test_delivery.py` ; E2E back-office → livreur → remise en caisse | réussi |
+| Annulation | API `test_customer_orders_and_cancels`, `test_staff_cancellation_needs_a_reason` ; E2E « le client annule sa commande » | réussi |
+| Remboursement (retour) | API `test_delivered_order_return_and_refund`, `test_failed_delivery_retry_then_return` | réussi en API ; **non exécuté en E2E** (écran réservé au Propriétaire, pas de compte Propriétaire de test) |
+| Accès administrateur | API `test_staff.py` (2FA obligatoire) ; E2E connexion Gestionnaire avec code 2FA | réussi |
+| Permissions | API : 45 assertions 401/403 ; E2E : client renvoyé de `/admin`, visiteur renvoyé vers la connexion | réussi |
+| Gestion des erreurs | API : validation en français, CSRF, limitation des tentatives ; E2E : mauvais mot de passe, CGV non acceptées, suivi introuvable générique | réussi |
+| Utilisation mobile | tous les E2E rejoués sur Pixel 7 | réussi |
 
 ## Problèmes connus / risques
 
@@ -156,6 +180,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 7 — frontend : 7.1 socle, 7.2 boutique, 7.3 compte client, 7.4 back-office, 7.5 espace livreur ; commit + push à la fin de chaque sous-étape.
+Validation de l'étape 8 par le porteur, puis étape 9 (déploiement) : accord explicite requis avant toute action irréversible ou publique (comptes d'hébergement, domaine, base de production).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.
