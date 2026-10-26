@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.9 — Backend : livraison, retours et compte client** : en cours.
+**Étape 6.10 — Backend : pilotage et compléments du back-office** : en cours (6.10 promos et 6.11 avis/favoris du prompt maître : hors MVP).
+
+- Étape 6.9 — Livraison, retours et compte client : **validée le 2026-10-26**, avec la proposition 6.10 « pilotage et compléments ».
 
 - Étape 6.8 — Encaissements : **validée le 2026-10-26**.
 
@@ -85,6 +87,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/modules/cart/{service,schemas,router}.py`, fusion à la connexion dans `auth/router.py`, `backend/tests/test_cart.py` — panier visiteur (cookie) et client, fusion, contrôles 5 unités / disponible / publié, plafond 300 000 FCFA (6.6, commité)
 - `backend/app/modules/delivery/{schemas,router}.py` (communes), `backend/app/modules/orders/{schemas,service,notify,router}.py`, `backend/app/core/errors.py` (messages de validation en français), `backend/tests/test_orders.py` — commandes (6.7, commité)
 - `backend/app/modules/payments/{schemas,router}.py`, `backend/app/modules/delivery/courier.py`, « Livrée » et `/checkout/preview` dans `orders/`, `backend/tests/test_cash.py` — livraison encaissée, espèces par livreur, remises de caisse (6.8, commité)
+- `backend/app/modules/customers/{schemas,router}.py` (profil, adresses), échec / nouvelle tentative / retour dans `orders/service.py`, `orders/router.py` et `delivery/courier.py`, `backend/tests/test_delivery.py` (6.9, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -111,6 +114,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.3 : appels réels via le relais | listes publiques 200, collection inconnue 404, écriture anonyme 401 |
 | 2026-10-26 | CI GitHub (commit 6.3) | backend, frontend, e2e : verts |
 | 2026-10-26 | 6.4 : `pytest` | 75/75 réussis |
+| 2026-10-26 | 6.9 : `pytest` | 130/130 réussis |
+| 2026-10-26 | 6.9 : démonstration réelle via le relais (base de dev, données supprimées, numérotation remise à PP-10001) | adresse au carnet ; échec « reportée » → nouvelle tentative (2) ; échec « injoignable » → 3e tentative refusée ; colis revenu contrôlé 1 bon / 1 fêlé → Retour +1, Perte tracée, paiement annulé ; historique client complet. Le script de nettoyage a d'abord échoué (ordre des suppressions), corrigé puis relancé : base vide |
 | 2026-10-26 | 6.8 : `pytest` | 124/124 réussis |
 | 2026-10-26 | 6.8 : démonstration réelle via le relais (base de dev, données supprimées, numérotation remise à PP-10001) | récapitulatif serveur 76 000 + 1 500 = 77 500 ; le livreur ne voit que sa livraison ; « livrée » refusée à 75 000, acceptée à 77 500 ; caisse interdite au livreur (403) ; remise de 77 000 refusée sans explication puis enregistrée avec écart −500 ; paiement « Remis » |
 | 2026-10-26 | 6.7 : `pytest` | 118/118 réussis (dont 8 validations simultanées de la dernière unité : 1 commande, 7 refus ; relancé 5 fois) |
@@ -136,6 +141,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 6.9 : livraison (échec avec motif, 2 tentatives max, retour à la boutique avec contrôle Retour/Perte, retour d'une commande livrée avec remboursement par le Propriétaire), profil et adresses client.
+Étape 6.10 : tableau de bord (F-40), clients (F-45), contact (F-12, F-46), paramètres de la boutique (F-47), journal d'audit (F-49).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

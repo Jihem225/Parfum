@@ -2,6 +2,7 @@
 Chaque changement écrit statut, stock, paiement, historique et audit dans la même transaction."""
 
 from collections import Counter
+from collections.abc import Mapping
 from datetime import UTC, datetime
 
 from sqlalchemy import delete, select
@@ -18,6 +19,7 @@ from app.modules.inventory import service as inventory
 from app.modules.orders.models import (
     CallResult,
     EventKind,
+    FailureReason,
     Order,
     OrderEvent,
     OrderItem,
@@ -42,6 +44,8 @@ TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
 CANCELLABLE = {S.EN_ATTENTE_CONFIRMATION, S.CONFIRMEE, S.EN_PREPARATION}  # RG-32
 FINAL = {S.LIVREE, S.RETOURNEE, S.ANNULEE}
 MAX_UNANSWERED_CALLS = 3  # RG-31
+MAX_DELIVERY_ATTEMPTS = 2  # RG-44
+RETRIABLE = {FailureReason.INJOIGNABLE, FailureReason.REPORTEE}
 
 LABELS = {
     S.EN_ATTENTE_CONFIRMATION: "En attente de confirmation",
@@ -178,6 +182,7 @@ def transition(
     actor_id: int | None,
     note: str = "",
     courier_id: int | None = None,
+    failure_reason: FailureReason | None = None,
 ) -> None:
     """Seules les transitions du §6.1 passent ; les rôles sont contrôlés par les routes."""
     origin = order.status
@@ -187,6 +192,8 @@ def transition(
             "INVALID_TRANSITION",
             f"Impossible de passer de « {LABELS[origin]} » à « {LABELS[to]} ».",
         )
+    if origin == S.ECHEC_LIVRAISON and to == S.EN_LIVRAISON:
+        _check_retry(db, order)
     lines = {i.variant_id: i.quantity for i in items(db, order)}
     if to == S.ANNULEE:
         inventory.release(db, lines, order_id=order.id, user_id=actor_id)  # RG-14
@@ -212,6 +219,7 @@ def transition(
             kind=EventKind.STATUS_CHANGE,
             from_status=origin,
             to_status=to,
+            failure_reason=failure_reason,
             note=note or None,
             user_id=actor_id,
         )
@@ -237,6 +245,91 @@ def deliver(db: Session, order: Order, amount_collected: int, *, actor_id: int) 
             {"total": order.total},
         )
     transition(db, order, S.LIVREE, actor_id=actor_id, note=f"Encaissé : {fcfa(order.total)}")
+
+
+def _last_failure(db: Session, order: Order) -> FailureReason | None:
+    return db.scalar(
+        select(OrderEvent.failure_reason)
+        .where(OrderEvent.order_id == order.id, OrderEvent.failure_reason.is_not(None))
+        .order_by(OrderEvent.id.desc())
+        .limit(1)
+    )
+
+
+def _check_retry(db: Session, order: Order) -> None:
+    """RG-44 : nouvelle tentative seulement si le client est injoignable ou a reporté, et
+    2 tentatives au total ; sinon le colis revient à la boutique."""
+    if _last_failure(db, order) not in RETRIABLE:
+        raise AppError(
+            409, "NO_RETRY", "Le client a refusé ou l'adresse est introuvable : retour boutique."
+        )
+    if order.delivery_attempts >= MAX_DELIVERY_ATTEMPTS:
+        raise AppError(
+            409,
+            "NO_RETRY",
+            f"{MAX_DELIVERY_ATTEMPTS} tentatives déjà faites : le colis revient à la boutique.",
+        )
+
+
+def fail_delivery(
+    db: Session, order: Order, reason: FailureReason, note: str, *, actor_id: int
+) -> None:
+    transition(db, order, S.ECHEC_LIVRAISON, actor_id=actor_id, note=note, failure_reason=reason)
+
+
+def receive_return(
+    db: Session,
+    order: Order,
+    lines: Mapping[int, tuple[int, int]],
+    *,
+    actor_id: int,
+    note: str,
+    refund_amount: int | None,
+) -> None:
+    """Colis revenu (RG-15) ou retour d'une commande livrée (RG-46). Chaque article est
+    contrôlé : remis en stock (« Retour ») ou perdu (« Perte »)."""
+    ordered = {i.variant_id: i.quantity for i in items(db, order)}
+    if set(lines) != set(ordered) or any(
+        sum(lines[v]) != quantity for v, quantity in ordered.items()
+    ):
+        raise AppError(
+            422,
+            "INVALID_RETURN",
+            "Indiquez, pour chaque article, combien reviennent en stock et combien sont perdus.",
+        )
+    paid = payment(db, order)
+    if order.status == S.LIVREE:
+        if paid.status != PaymentStatus.REMIS:
+            raise AppError(
+                409,
+                "CASH_NOT_REMITTED",
+                "Enregistrez d'abord la remise de caisse du livreur pour cette commande.",
+            )
+        if refund_amount is None or not 0 <= refund_amount <= order.total:
+            raise AppError(
+                422,
+                "REFUND_REQUIRED",
+                f"Indiquez le montant remboursé (de 0 à {fcfa(order.total)}).",
+            )
+        paid.status = PaymentStatus.REMBOURSE
+        paid.refunded_at = datetime.now(UTC)
+        note = f"{note} — remboursé : {fcfa(refund_amount)}".lstrip(" —")
+    else:
+        paid.status = PaymentStatus.ANNULE
+    transition(db, order, S.RETOURNEE, actor_id=actor_id, note=note)
+    restocked = {v: r for v, (r, _) in lines.items() if r}
+    if restocked:
+        inventory.restock_return(db, restocked, order_id=order.id, user_id=actor_id)
+    for variant_id, (_, lost) in lines.items():
+        if lost:
+            inventory.record_loss(
+                db,
+                variant_id,
+                lost,
+                order_id=order.id,
+                user_id=actor_id,
+                reason=note or "Produit abîmé",
+            )
 
 
 def record_call(db: Session, order: Order, result: CallResult, note: str, *, actor_id: int) -> None:

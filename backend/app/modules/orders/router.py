@@ -10,7 +10,7 @@ from app.core import rate_limit
 from app.core.email import send_email
 from app.core.errors import AppError
 from app.modules.auth.deps import DB, BackOffice, CurrentUser, client_ip
-from app.modules.auth.models import User
+from app.modules.auth.models import User, UserRole
 from app.modules.cart import service as cart_service
 from app.modules.cart.router import CART_COOKIE, OptionalUser
 from app.modules.catalog.queries import like
@@ -37,6 +37,7 @@ from app.modules.orders.schemas import (
     OrderSummary,
     PersonRef,
     PreviewIn,
+    ReturnIn,
     StatusStep,
     TrackIn,
     TransitionIn,
@@ -337,4 +338,25 @@ def change_status(
     )
     db.commit()
     _send(background, notify.to_customer(order))
+    return _admin_out(db, order)
+
+
+@admin.post("/{number}/return")
+def return_order(number: str, data: ReturnIn, user: BackOffice, db: DB) -> AdminOrderOut:
+    """Colis revenu après échec (Gestionnaire) ou retour d'une commande livrée, avec
+    remboursement (Propriétaire seulement, RG-46)."""
+    order = service.locked(db, number)
+    if order.status == OrderStatus.LIVREE and user.role != UserRole.OWNER:
+        raise AppError(
+            403, "FORBIDDEN", "Seul le Propriétaire traite le retour d'une commande livrée."
+        )
+    service.receive_return(
+        db,
+        order,
+        {line.variant_id: (line.restocked, line.lost) for line in data.items},
+        actor_id=user.id,
+        note=data.note,
+        refund_amount=data.refund_amount,
+    )
+    db.commit()
     return _admin_out(db, order)

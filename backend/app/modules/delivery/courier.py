@@ -3,7 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,7 @@ from app.core.errors import AppError
 from app.modules.auth.deps import DB, require_roles
 from app.modules.auth.models import User, UserRole
 from app.modules.orders import notify, service
-from app.modules.orders.models import Order, OrderStatus
+from app.modules.orders.models import FailureReason, Order, OrderStatus
 
 router = APIRouter(prefix="/courier/deliveries", tags=["livreur"])
 
@@ -44,6 +44,11 @@ class DeliveredIn(BaseModel):
     amount_collected: Annotated[int, Field(ge=0)]
 
 
+class FailedIn(BaseModel):
+    reason: FailureReason
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] = ""
+
+
 def _out(db: Session, order: Order) -> DeliveryOut:
     return DeliveryOut(
         number=order.number,
@@ -71,13 +76,28 @@ def my_deliveries(user: Deliverer, db: DB) -> list[DeliveryOut]:
     return [_out(db, o) for o in db.scalars(query.order_by(Order.commune_name, Order.id))]
 
 
+def _assigned(db: Session, user: User, number: str) -> Order:
+    order = service.locked(db, number)
+    if user.role == UserRole.COURIER and order.courier_id != user.id:
+        raise AppError(404, "NOT_FOUND", "Commande introuvable.")
+    return order
+
+
+@router.post("/{number}/failed")
+def mark_failed(number: str, data: FailedIn, user: Deliverer, db: DB) -> DeliveryOut:
+    """F-61 : échec avec motif ; le colis reste chez le livreur jusqu'à la décision de la
+    boutique (nouvelle tentative ou retour)."""
+    order = _assigned(db, user, number)
+    service.fail_delivery(db, order, data.reason, data.note, actor_id=user.id)
+    db.commit()
+    return _out(db, order)
+
+
 @router.post("/{number}/delivered")
 def mark_delivered(
     number: str, data: DeliveredIn, user: Deliverer, db: DB, background: BackgroundTasks
 ) -> DeliveryOut:
-    order = service.locked(db, number)
-    if user.role == UserRole.COURIER and order.courier_id != user.id:
-        raise AppError(404, "NOT_FOUND", "Commande introuvable.")
+    order = _assigned(db, user, number)
     service.deliver(db, order, data.amount_collected, actor_id=user.id)
     db.commit()
     message = notify.to_customer(order)

@@ -70,6 +70,18 @@ class TransitionIn(BaseModel):
     note: Note = ""  # motif, obligatoire pour une annulation
 
 
+class ReturnLine(BaseModel):
+    variant_id: int
+    restocked: Annotated[int, Field(ge=0, le=5)]  # en bon état : retour en stock
+    lost: Annotated[int, Field(ge=0, le=5)] = 0  # abîmé : perte
+
+
+class ReturnIn(BaseModel):
+    items: Annotated[list[ReturnLine], Field(min_length=1, max_length=20)]
+    note: Note = ""
+    refund_amount: Annotated[int, Field(ge=0)] | None = None  # commande livrée seulement
+
+
 class OrderLineOut(BaseModel):
     product_name: str
     volume_ml: int
