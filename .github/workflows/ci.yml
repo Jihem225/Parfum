@@ -72,6 +72,9 @@ jobs:
       DATABASE_URL: postgresql+psycopg://parfums:parfums@localhost:5432/parfums
       BACKEND_INTERNAL_URL: http://localhost:8000
       SECRET_KEY: secret-de-ci-uniquement-pour-les-tests
+      # Comptes de test E2E (gestionnaire avec double authentification, livreur) : CI uniquement.
+      SEED_STAFF_PASSWORD: motdepasse-e2e-uniquement
+      SEED_MANAGER_TOTP_SECRET: JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
