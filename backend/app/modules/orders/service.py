@@ -2,6 +2,7 @@
 Chaque changement écrit statut, stock, paiement, historique et audit dans la même transaction."""
 
 from collections import Counter
+from datetime import UTC, datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ from app.modules.orders.models import (
     OrderStatus,
     order_number_seq,
 )
+from app.modules.orders.notify import fcfa
 from app.modules.orders.schemas import CheckoutIn
 from app.modules.payments.models import Payment, PaymentStatus
 
@@ -53,6 +55,13 @@ LABELS = {
 }
 
 
+def served_commune(db: Session, commune_id: int) -> Commune:
+    commune = db.get(Commune, commune_id)
+    if commune is None or not commune.is_active:
+        raise AppError(422, "COMMUNE_NOT_SERVED", "Nous ne livrons pas encore cette commune.")
+    return commune
+
+
 def checkout(
     db: Session, data: CheckoutIn, *, cart: Cart | None, user: User | None
 ) -> tuple[Order, bool]:
@@ -76,9 +85,7 @@ def checkout(
             "votre panier.",
             summary.model_dump(mode="json"),
         )
-    commune = db.get(Commune, data.commune_id)
-    if commune is None or not commune.is_active:
-        raise AppError(422, "COMMUNE_NOT_SERVED", "Nous ne livrons pas encore cette commune.")
+    commune = served_commune(db, data.commune_id)
     total = summary.subtotal + commune.delivery_fee
     if total > cart_service.COD_LIMIT:
         raise AppError(
@@ -193,6 +200,11 @@ def transition(
             inventory.ship(db, lines, order_id=order.id, user_id=actor_id)  # RG-13
         order.courier_id = courier.id
         order.delivery_attempts += 1
+    elif to == S.LIVREE:  # RG-43 : livrée implique encaissée, par le livreur de la commande
+        paid = payment(db, order)
+        paid.status = PaymentStatus.ENCAISSE
+        paid.collected_by = order.courier_id
+        paid.collected_at = datetime.now(UTC)
     order.status = to
     db.add(
         OrderEvent(
@@ -213,6 +225,18 @@ def transition(
         before={"status": origin.value},
         after={"status": to.value, "note": note or None, "courier_id": order.courier_id},
     )
+
+
+def deliver(db: Session, order: Order, amount_collected: int, *, actor_id: int) -> None:
+    """Le livreur confirme avoir reçu le montant total exact (RG-43, US-23)."""
+    if order.status == S.EN_LIVRAISON and amount_collected != order.total:
+        raise AppError(
+            422,
+            "AMOUNT_MISMATCH",
+            f"Le montant encaissé doit être exactement {fcfa(order.total)}.",
+            {"total": order.total},
+        )
+    transition(db, order, S.LIVREE, actor_id=actor_id, note=f"Encaissé : {fcfa(order.total)}")
 
 
 def record_call(db: Session, order: Order, result: CallResult, note: str, *, actor_id: int) -> None:

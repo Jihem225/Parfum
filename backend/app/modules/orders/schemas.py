@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, StringConstraints
 
 from app.core.validators import PersonName, Phone
 from app.modules.auth.schemas import Email
+from app.modules.cart.schemas import CartOut
 from app.modules.orders.models import CallResult, EventKind, FailureReason, OrderStatus
 from app.modules.payments.models import PaymentStatus
 
@@ -25,6 +26,22 @@ class CheckoutIn(BaseModel):
     accept_terms: bool  # CGV (RG-29)
     expected_total: Annotated[int, Field(gt=0)]  # total affiché au client : un écart est signalé
     idempotency_key: Annotated[str, StringConstraints(min_length=16, max_length=64)]
+
+
+class PreviewIn(BaseModel):
+    commune_id: int
+
+
+class CheckoutPreview(BaseModel):
+    """Récapitulatif calculé par le serveur : son `total` est l'`expected_total` à renvoyer."""
+
+    cart: CartOut
+    commune_name: str
+    delivery_fee: int
+    delivery_delay_label: str
+    total: int
+    exceeds_cod_limit: bool
+    can_order: bool
 
 
 class TrackIn(BaseModel):

@@ -30,11 +30,13 @@ from app.modules.orders.schemas import (
     CallIn,
     CancelIn,
     CheckoutIn,
+    CheckoutPreview,
     EventOut,
     OrderLineOut,
     OrderOut,
     OrderSummary,
     PersonRef,
+    PreviewIn,
     StatusStep,
     TrackIn,
     TransitionIn,
@@ -91,6 +93,24 @@ def _send(background: BackgroundTasks, *messages: notify.Message | None) -> None
 
 
 # --- Boutique ------------------------------------------------------------------------------------
+
+
+@public.post("/checkout/preview")
+def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB) -> CheckoutPreview:
+    cart = cart_service.view(db, cart_service.find(db, user, request.cookies.get(CART_COOKIE)))
+    commune = service.served_commune(db, data.commune_id)
+    total = cart.subtotal + commune.delivery_fee
+    return CheckoutPreview(
+        cart=cart,
+        commune_name=commune.name,
+        delivery_fee=commune.delivery_fee,
+        delivery_delay_label=commune.delay_label,
+        total=total,
+        exceeds_cod_limit=total > cart_service.COD_LIMIT,
+        can_order=bool(cart.items)
+        and all(line.issue is None for line in cart.items)
+        and total <= cart_service.COD_LIMIT,
+    )
 
 
 @public.post("/orders", status_code=201)

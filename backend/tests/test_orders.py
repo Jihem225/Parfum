@@ -24,6 +24,7 @@ from app.modules.catalog.models import (
     ProductStatus,
     ProductVariant,
 )
+from app.modules.delivery import courier
 from app.modules.delivery.models import Commune
 from app.modules.inventory.models import StockMovement
 from app.modules.orders import router as orders_router
@@ -49,7 +50,8 @@ def cocody(db: Session) -> Commune:
 @pytest.fixture
 def mails(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str, str]]:
     sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr(orders_router, "send_email", lambda *a: sent.append(a))
+    for module in (orders_router, courier):
+        monkeypatch.setattr(module, "send_email", lambda *a: sent.append(a))
     monkeypatch.setattr(settings, "shop_notification_email", "shop@ex.com")
     return sent
 

@@ -35,6 +35,10 @@ def to_customer(order: Order) -> Message | None:
             f"Commande {n} en route",
             f"Votre commande {n} est partie en livraison. Merci de prévoir {total} en espèces.",
         ),
+        OrderStatus.LIVREE: (
+            f"Commande {n} livrée",
+            f"Votre commande {n} vous a été remise. Merci pour votre confiance.",
+        ),
         OrderStatus.ANNULEE: (
             f"Commande {n} annulée",
             f"Votre commande {n} a été annulée. Pour toute question, répondez à ce message.",
