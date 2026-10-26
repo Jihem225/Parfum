@@ -73,6 +73,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false  # l'API tourne encore en fin de job et verrouillerait le cache
       - name: Démarrer l'API
         working-directory: backend
         run: |
