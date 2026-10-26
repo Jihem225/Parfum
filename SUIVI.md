@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 9 — Déploiement** : préparation réalisée le 2026-10-26 (dépôt prêt, rien n'est encore en ligne) ; **en attente de validation et des comptes du porteur** (Render, Cloudflare, domaine, Resend).
+**Étape 10 — Livraison et maintenance** : réalisée le 2026-10-26, **en attente d'approbation du bilan final** ([`docs/10-bilan.md`](docs/10-bilan.md)). Mise en ligne réelle toujours en attente : domaine, comptes Render / Cloudflare / Resend, décision sur la préproduction.
+
+- Étape 9 — Déploiement (préparation) : **validée le 2026-10-26** (« valide »). Rien n'est encore en ligne.
 
 - Étape 8 — Intégration et tests complets : **validée le 2026-10-26** (« passe à l'étape suivante »).
 
@@ -102,6 +104,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
   - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
   - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
   - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` + `e2e/order.ts` (Playwright, CI ; étape 8 : recherche, rupture, annulation client, accès back-office).
+- Étape 10 : `docs/10-bilan.md`, `docs/10-guide-back-office.md`, `docs/03-conception-technique.md` (§8, §12 à jour), `backend/app/core/images.py` (décodeurs limités).
 - Étape 9 : `render.yaml`, `.github/workflows/backup.yml`, `docs/09-deploiement.md`, `backend/app/core/{config,storage}.py` (garde-fous de production, R2), `backend/app/modules/auth/deps.py` (`client_ip`), `backend/tests/test_production.py`, `frontend/src/lib/backend.ts`.
 - `backend/app/scripts/seed_demo.py` — catalogue d'exemple fictif (+ comptes de test E2E si variables fournies) ; route `GET /admin/couriers` ; `variant_id` sur les lignes de commande.
 
@@ -151,6 +154,9 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | Étape 9 : démarrage `APP_ENV=production` en local | configuration incomplète → refus avec la liste des manques ; complète → santé 200, URL d'image sur le domaine R2 |
 | 2026-10-26 | Étape 9 : `pg_dump` (format custom) → `pg_restore` dans une base temporaire | comptes identiques (parfums, commandes, mouvements, audits), migration 0002 et séquence conservées ; base temporaire supprimée |
 | 2026-10-26 | Étape 9 : frontend lint / typecheck / Vitest / build avec `BACKEND_INTERNAL_URL=hôte:port` | OK / OK / 11/11 / relais `http://hôte:port/api/v1` |
+| 2026-10-26 | Étape 10 : `pnpm audit` (frontend) | 0 vulnérabilité |
+| 2026-10-26 | Étape 10 : `pip-audit` (dépendances de production du backend) | **37 vulnérabilités, toutes dans Pillow 12.3.0** (corrigées en 13.0.0, publiée le 2026-10-16) → décodeurs limités à JPG / PNG / WebP (`formats=`), test GIF / TIFF refusés ; montée de version reportée au 2026-10-30 |
+| 2026-10-26 | Étape 10 : backend `pytest`, `ruff`, `mypy` (comme en CI) | 149/149 réussis ; OK ; OK |
 | — | E2E Playwright | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
 
 ## Étape 8 — matrice des parcours
@@ -185,6 +191,7 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 - Adresse IP des clients (limites par IP) : réglée par `TRUSTED_PROXY_HOPS` ; valeur à confirmer en production (journal d'audit, docs/09 §4). Un attaquant qui contourne Cloudflare par l'URL `onrender.com` peut falsifier son adresse aux yeux des limites par IP.
 - Base de production ouverte aux connexions externes (TLS + mot de passe généré) pour la sauvegarde GitHub Actions.
 - Pas de Sentry ni de journaux JSON au MVP (journaux Render + notifications Render).
+- Pillow 12.3.0 vulnérable (voir docs/10-bilan.md) : exposition réduite aux PNG envoyés par l'équipe ; montée en 13.0.0 prévue le 2026-10-30.
 - Écarts de l'étape 7 par rapport à la conception : composants maison à la charte au lieu de shadcn/ui (pas d'installation de code externe, moins de dépendances) ; `<img>` au lieu de `next/image` (images déjà optimisées en WebP par le backend, compatible R2) ; pas de QR code pour la 2FA (clé + lien `otpauth://`).
 - CI E2E lente (≈ 12 min) : le téléchargement des paquets système de Chromium depuis le miroir Ubuntu est très lent ; les tests eux-mêmes prennent quelques secondes. Piste étape 9 : image Docker officielle Playwright ou cache.
 - Base de développement : contient le catalogue d'exemple (fictif) et les comptes `gestion-e2e@exemple.com` / `livreur-e2e@exemple.com` de vérification locale.
@@ -192,6 +199,7 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-Étape 9 : le porteur valide la préparation, décide de la préproduction, fournit le domaine et ouvre (ou autorise) les comptes ; puis mise en ligne pas à pas selon `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+Approbation du bilan final (étape 10). Puis mise en ligne quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

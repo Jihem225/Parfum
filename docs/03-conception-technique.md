@@ -332,8 +332,8 @@ Documentation OpenAPI générée automatiquement (`/api/v1/docs`, désactivée e
 
 - **E-mails** : Resend, via son API HTTP (pas de SDK supplémentaire). En développement, les e-mails sont affichés dans la console. Envoi après validation de la transaction ; un échec d'envoi est journalisé sans bloquer la commande.
   *shortcut : pas de file de réessai ; à ajouter (table d'envoi + tâche planifiée) si des pertes d'e-mails sont constatées.*
-- **Journaux** : format JSON structuré, un identifiant par requête, aucun mot de passe ni jeton journalisé.
-- **Erreurs** : Sentry (offre gratuite), activé seulement si `SENTRY_DSN` est défini, côté frontend et backend.
+- **Journaux** : sortie texte standard d'uvicorn et des modules (format JSON et identifiant par requête non réalisés au MVP) ; aucun mot de passe ni jeton journalisé.
+- **Erreurs** : prévu avec Sentry ; **non intégré au MVP** (étape 9) : journaux et notifications Render. À ajouter si les erreurs passent inaperçues.
 - **Santé** : `/api/v1/health` vérifie la connexion à la base ; utilisé par l'hébergeur pour redémarrer un service défaillant.
 
 ---
@@ -399,30 +399,36 @@ Commandes prévues (détaillées dans le README à l'étape 5) : `pnpm dev` (fro
 
 ## 12. Variables d'environnement
 
-**Backend**
+Liste exhaustive (mise à jour à l'étape 10). En production, les valeurs sont saisies dans Render : voir `render.yaml` et `docs/09-deploiement.md`.
 
-| Variable | Exemple / rôle |
-|---|---|
-| `DATABASE_URL` | `postgresql+psycopg://…` |
-| `APP_ENV` | `development` / `production` |
-| `SECRET_KEY` | secret aléatoire (signatures internes) |
-| `FRONTEND_ORIGIN` | `https://<domaine>` (vérification `Origin`) |
-| `COOKIE_SECURE` | `true` en production |
-| `ORDER_NUMBER_PREFIX` | `PP` (provisoire) |
-| `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` | stockage des images (R2) |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `SHOP_NOTIFICATION_EMAIL` | e-mails (vide en développement → console) |
-| `SENTRY_DSN` | facultatif |
+**Backend** (`backend/.env.example`)
 
-**Frontend**
+| Variable | Obligatoire | Rôle |
+|---|---|---|
+| `DATABASE_URL` | oui | `postgresql+psycopg://…` (`postgresql://…` accepté, converti) |
+| `SECRET_KEY` | oui | chiffre les secrets de double authentification ; ≥ 32 caractères en production ; ne pas changer sans raison (docs/09 §5) |
+| `APP_ENV` | non | `development` (défaut) / `test` / `production` (active les garde-fous de démarrage) |
+| `FRONTEND_ORIGIN` | production | `https://<domaine>` : vérification de l'en-tête `Origin` |
+| `COOKIE_SECURE` | production | `true` : cookies envoyés en HTTPS uniquement |
+| `TRUSTED_PROXY_HOPS` | production | relais ajoutant une adresse à `X-Forwarded-For` : 1 (Render), 2 (Cloudflare + Render) |
+| `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` | production | images sur Cloudflare R2 ; vides → disque local `media/` |
+| `MEDIA_DIR`, `MEDIA_BASE_URL` | non | stockage local (défaut `media`, `/media`) |
+| `RESEND_API_KEY`, `EMAIL_FROM` | recommandé | e-mails ; sans clé : console (dév.) ou erreur journalisée (prod.) |
+| `SHOP_NOTIFICATION_EMAIL` | recommandé | destinataire des alertes (nouvelles commandes, stock bas) |
+| `ORDER_NUMBER_PREFIX` | non | préfixe des numéros de commande (défaut `PP`) |
+| `TEST_DATABASE_URL` | tests | base dédiée aux tests pytest |
+| `SEED_STAFF_PASSWORD`, `SEED_MANAGER_TOTP_SECRET` | CI | comptes de test E2E créés par `seed_demo` (jamais en production) |
+
+**Frontend** (`frontend/.env.example`)
 
 | Variable | Rôle |
 |---|---|
-| `BACKEND_INTERNAL_URL` | URL du backend pour le relais et le rendu serveur (jamais exposée au navigateur) |
-| `NEXT_PUBLIC_SITE_URL` | URL publique (métadonnées, sitemap) |
-| `NEXT_PUBLIC_IMAGES_BASE_URL` | domaine des images |
-| `NEXT_PUBLIC_SENTRY_DSN` | facultatif |
+| `BACKEND_INTERNAL_URL` | URL du backend pour le relais `/api/v1` et le rendu serveur, jamais exposée au navigateur ; « hôte:port » accepté. **Lue au build.** |
+| `NEXT_PUBLIC_SITE_URL` | URL publique (sitemap, robots). **Lue au build.** |
 
-Un fichier `.env.example` par application sera fourni à l'étape 5.
+**GitHub Actions** (secrets, sauvegarde) : `BACKUP_DATABASE_URL`, `R2_ENDPOINT`, `R2_BACKUP_BUCKET`, `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY`.
+
+Non retenus au MVP : Sentry (`SENTRY_DSN`), domaine d'images côté frontend (les URL d'images viennent de l'API).
 
 ---
 

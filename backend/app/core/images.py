@@ -7,7 +7,7 @@ from app.core.errors import AppError
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 2000
-ACCEPTED_FORMATS = {"JPEG", "PNG", "WEBP"}
+ACCEPTED_FORMATS = ("JPEG", "PNG", "WEBP")
 Image.MAX_IMAGE_PIXELS = 40_000_000  # au-delà : refus (protection contre les « bombes » d'images)
 
 
@@ -19,12 +19,10 @@ def to_webp(data: bytes) -> bytes:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            with Image.open(io.BytesIO(data)) as probe:
-                image_format = probe.format
+            # formats= : les autres décodeurs (TIFF, GIF, EPS…) ne voient jamais le fichier.
+            with Image.open(io.BytesIO(data), formats=ACCEPTED_FORMATS) as probe:
                 probe.verify()
-            if image_format not in ACCEPTED_FORMATS:
-                raise AppError(422, "INVALID_IMAGE", "Formats acceptés : JPG, PNG ou WebP.")
-            with Image.open(io.BytesIO(data)) as source:
+            with Image.open(io.BytesIO(data), formats=ACCEPTED_FORMATS) as source:
                 image = ImageOps.exif_transpose(source)
                 has_alpha = image.mode in ("RGBA", "LA") or "transparency" in image.info
                 image = image.convert("RGBA" if has_alpha else "RGB")
@@ -40,5 +38,5 @@ def to_webp(data: bytes) -> bytes:
         SyntaxError,
     ) as exc:
         raise AppError(
-            422, "INVALID_IMAGE", "Fichier image illisible ou non pris en charge."
+            422, "INVALID_IMAGE", "Image illisible. Formats acceptés : JPG, PNG ou WebP."
         ) from exc

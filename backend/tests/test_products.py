@@ -171,6 +171,14 @@ def test_image_is_checked_and_converted_to_webp(
         files={"file": ("photo.jpg", b"ceci n'est pas une image", "image/jpeg")},
     )
     assert fake.json()["error"]["code"] == "INVALID_IMAGE"
+    for other in ("GIF", "TIFF"):  # vraies images, mais décodeurs exclus (failles de Pillow)
+        buffer = io.BytesIO()
+        Image.new("RGB", (10, 10)).save(buffer, other)
+        refused = manager.post(
+            f"{ADMIN}/products/{product['id']}/images",
+            files={"file": ("photo.jpg", buffer.getvalue(), "image/jpeg")},
+        )
+        assert refused.json()["error"]["code"] == "INVALID_IMAGE"
 
     exif = Image.Exif()
     exif[0x010F] = "Appareil secret"  # fabricant : métadonnée à supprimer

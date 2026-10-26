@@ -69,3 +69,7 @@ GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) exécute
 ## Déploiement
 
 Render + Cloudflare (R2) + Resend, décrit par `render.yaml` ; procédure, sauvegardes et retour arrière : [docs/09-deploiement.md](docs/09-deploiement.md).
+
+## Documentation
+
+Bilan de livraison, limites connues et maintenance : [docs/10-bilan.md](docs/10-bilan.md). Utilisation du back-office : [docs/10-guide-back-office.md](docs/10-guide-back-office.md).
