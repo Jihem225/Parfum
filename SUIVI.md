@@ -145,7 +145,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | Étape 7 : backend `pytest` / frontend Vitest / lint / typecheck / build | 137/137 / 11/11 / OK / OK / 50 pages |
 | 2026-10-26 | Étape 8 : backend `pytest`, `ruff`, `mypy` (local) | 137/137 réussis ; OK ; OK |
 | 2026-10-26 | Étape 8 : CI GitHub run 40349531610 (commit d982476) | backend, frontend, e2e : verts ; **E2E 18/18 réussis** (9 parcours × mobile Pixel 7 + ordinateur), 0 échec, 0 relance |
-| 2026-10-26 | Étape 9 : backend `pytest`, `ruff`, `mypy` | 148/148 réussis (dont adresse client derrière relais, garde-fous de production, stockage R2 simulé) ; OK ; OK |
+| 2026-10-26 | Étape 9 : CI GitHub run 40355511225 (commit 5be97f8 ; le précédent était rouge : mypy sur un test, corrigé) | backend 149/149, frontend 11/11, E2E 18/18 : verts |
+| 2026-10-26 | Étape 9 : backend `pytest`, `ruff`, `mypy` | 149/149 réussis (dont adresse client derrière relais, garde-fous de production, stockage R2 simulé) ; OK ; OK |
 | 2026-10-26 | Étape 9 : relais Next.js → en-têtes reçus par le backend (serveur d'écho local) | `X-Forwarded-For` transmis tel quel, sans ajout → l'adresse du client est celle ajoutée par Render (ou Cloudflare) |
 | 2026-10-26 | Étape 9 : démarrage `APP_ENV=production` en local | configuration incomplète → refus avec la liste des manques ; complète → santé 200, URL d'image sur le domaine R2 |
 | 2026-10-26 | Étape 9 : `pg_dump` (format custom) → `pg_restore` dans une base temporaire | comptes identiques (parfums, commandes, mouvements, audits), migration 0002 et séquence conservées ; base temporaire supprimée |
