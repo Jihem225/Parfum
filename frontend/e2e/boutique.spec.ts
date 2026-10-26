@@ -35,7 +35,7 @@ test("commande sans compte, du panier au suivi", async ({ page }) => {
   await expect(page).toHaveURL(/\/commande\/confirmee/);
   const number = (await page.getByText(/^PP-\d+$/).textContent()) ?? "";
   expect(number).toMatch(/^PP-\d+$/);
-  await page.getByRole("link", { name: "Suivre ma commande" }).last().click();
+  await page.locator('a[href^="/suivi?numero="]').click(); // pas le lien du pied de page, sans numéro
   await page.getByLabel("Téléphone").filter({ visible: true }).fill("0708123456"); // page précédente gardée masquée par Next
   await page.getByRole("button", { name: "Suivre" }).click();
   await expect(page.getByRole("heading", { name: number })).toBeVisible();
