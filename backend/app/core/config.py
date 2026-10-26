@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     email_from: str = "Projet Parfums <no-reply@example.com>"
     shop_notification_email: str = ""  # destinataire des alertes (stock bas, nouvelles commandes)
     order_number_prefix: str = "PP"  # provisoire (RG-28)
+    order_rate_limit: int = 10  # commandes par IP et par heure ; relevé pour les parcours E2E
     # Mobile money : "" = désactivé ; "simulation" = faux paiements (développement, CI ; refusé en
     # production). Les vrais prestataires s'ajoutent dans app/modules/payments/providers.py.
     payment_provider: Literal["", "simulation"] = ""

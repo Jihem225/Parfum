@@ -78,6 +78,8 @@ jobs:
       # Mobile money : faux prestataire (refusé en production), pour les parcours de paiement.
       PAYMENT_PROVIDER: simulation
       PAYMENT_WEBHOOK_SECRET: secret-de-ci-uniquement
+      # Tous les parcours commandent depuis la même adresse : limite par IP relevée (10 en production).
+      ORDER_RATE_LIMIT: "100"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

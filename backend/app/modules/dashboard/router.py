@@ -37,7 +37,8 @@ class BestSeller(BaseModel):
 class DashboardOut(BaseModel):
     date_from: date
     date_to: date
-    revenue: int  # commandes livrées et encaissées sur la période, hors frais de livraison
+    revenue: int  # commandes livrées et encaissées sur la période, hors livraison, remises déduites
+    discounts: int  # remises des codes promo sur ces mêmes commandes
     delivery_fees: int
     delivered_orders: int
     average_basket: int | None
@@ -68,9 +69,10 @@ def dashboard(
         Payment.collected_at >= start,
         Payment.collected_at < end,
     )
-    revenue, fees, delivered_count = db.execute(
+    revenue, discounts, fees, delivered_count = db.execute(
         select(
-            func.coalesce(func.sum(Order.subtotal), 0),
+            func.coalesce(func.sum(Order.subtotal - Order.discount), 0),
+            func.coalesce(func.sum(Order.discount), 0),
             func.coalesce(func.sum(Order.delivery_fee), 0),
             func.count(),
         )
@@ -138,6 +140,7 @@ def dashboard(
         date_from=date_from,
         date_to=date_to,
         revenue=revenue,
+        discounts=discounts,
         delivery_fees=fees,
         delivered_orders=delivered_count,
         average_basket=revenue // delivered_count if delivered_count else None,

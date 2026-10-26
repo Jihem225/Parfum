@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { z } from "zod";
 import { startPayment } from "@/components/pay-button";
@@ -40,7 +40,9 @@ export default function CommandePage() {
     resolver: zodResolver(checkoutSchema),
     defaultValues: { customer_name: "", phone: "", email: "", commune_id: "", address_line: "", landmark: "", accept_terms: false, payment_method: "CASH_ON_DELIVERY" },
   });
-  const { register, handleSubmit, setValue, setError, control, formState: { errors } } = form;
+  const { register, handleSubmit, setValue, setError, getValues, control, formState: { errors } } = form;
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState(""); // code soumis au récapitulatif du serveur
 
   // Préremplissage pour un client connecté : profil puis adresse par défaut.
   const defaultAddress = addresses.data?.find((a) => a.is_default && a.commune_served);
@@ -63,8 +65,12 @@ export default function CommandePage() {
   const method = useWatch({ control, name: "payment_method" });
   const mobile = method === "MOBILE_MONEY";
   const preview = useQuery({
-    queryKey: ["preview", communeId, method, cart.data?.subtotal, cart.data?.item_count],
-    queryFn: () => api<CheckoutPreview>("/checkout/preview", { json: { commune_id: communeId, payment_method: method } }),
+    queryKey: ["preview", communeId, method, promoCode, cart.data?.subtotal, cart.data?.item_count],
+    queryFn: () =>
+      api<CheckoutPreview>("/checkout/preview", {
+        // Le téléphone sert à signaler tout de suite un code déjà utilisé (revérifié à la validation).
+        json: { commune_id: communeId, payment_method: method, promo_code: promoCode, phone: promoCode ? getValues("phone") : "" },
+      }),
     enabled: communeId > 0,
   });
   // Au-delà du plafond du paiement à la livraison (RG-23), seul le mobile money reste possible.
@@ -77,7 +83,13 @@ export default function CommandePage() {
     mutationFn: (v: Out) => {
       idempotencyKey.current ??= crypto.randomUUID();
       return api<Order>("/orders", {
-        json: { ...v, email: v.email || null, expected_total: preview.data?.total, idempotency_key: idempotencyKey.current },
+        json: {
+          ...v,
+          email: v.email || null,
+          expected_total: preview.data?.total,
+          idempotency_key: idempotencyKey.current,
+          promo_code: preview.data?.promo_code ?? "", // seulement un code accepté par le récapitulatif
+        },
       });
     },
     onSuccess: async (order) => {
@@ -91,7 +103,7 @@ export default function CommandePage() {
     onError: (e) => {
       if (!(e instanceof ApiError)) return;
       for (const [field, message] of Object.entries(e.fieldErrors())) setError(field as keyof CheckoutValues, { message });
-      if (["PRICE_CHANGED", "CART_CHANGED", "INSUFFICIENT_STOCK"].includes(e.code)) {
+      if (["PRICE_CHANGED", "CART_CHANGED", "INSUFFICIENT_STOCK"].includes(e.code) || e.code.startsWith("PROMO_")) {
         qc.invalidateQueries({ queryKey: ["cart"] });
         qc.invalidateQueries({ queryKey: ["preview"] });
       }
@@ -204,6 +216,37 @@ export default function CommandePage() {
             <span>{formatFCFA(l.line_total)}</span>
           </div>
         ))}
+        {p?.promo_code ? (
+          <div className="flex justify-between gap-3 text-sm">
+            <span>
+              Code {p.promo_code}{" "}
+              <button type="button" onClick={() => { setPromoCode(""); setPromoInput(""); }} className="text-encre-douce underline">Retirer</button>
+            </span>
+            <span>−{formatFCFA(p.discount)}</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex gap-2">
+              <input
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault(); // pas d'envoi de la commande
+                  setPromoCode(promoInput.trim());
+                }}
+                aria-label="Code promo"
+                placeholder="Code promo"
+                autoCapitalize="characters"
+                className={`${inputClass} h-10 uppercase placeholder:normal-case`}
+              />
+              <Button type="button" size="sm" variant="secondary" disabled={!promoInput.trim()} onClick={() => setPromoCode(promoInput.trim())}>
+                Appliquer
+              </Button>
+            </div>
+            {promoCode && p?.promo_error && <span role="alert" className="text-sm text-erreur">{p.promo_error}</span>}
+          </div>
+        )}
         <div className="flex justify-between border-t border-filet pt-2 text-sm">
           <span>Livraison</span>
           <span>{p ? `${formatFCFA(p.delivery_fee)} · ${p.delivery_delay_label}` : "selon la commune"}</span>

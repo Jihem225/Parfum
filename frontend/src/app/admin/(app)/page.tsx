@@ -52,12 +52,13 @@ export default function DashboardPage() {
             </Alert>
           )}
           <p className="text-sm text-encre-douce">Période du {d.date_from} au {d.date_to} (30 derniers jours par défaut).</p>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <Kpi label="Chiffre d'affaires encaissé" value={formatFCFA(d.revenue)} />
             <Kpi label="Commandes livrées" value={String(d.delivered_orders)} />
             <Kpi label="Panier moyen" value={d.average_basket === null ? "—" : formatFCFA(d.average_basket)} />
             <Kpi label="Livraisons réussies" value={d.delivery_success_rate === null ? "—" : `${d.delivery_success_rate} %`} />
             <Kpi label="Frais de livraison" value={formatFCFA(d.delivery_fees)} />
+            <Kpi label="Remises (codes promo)" value={formatFCFA(d.discounts)} href="/admin/codes-promo" />
             <Kpi label="Espèces chez les livreurs" value={formatFCFA(d.cash_held_by_couriers)} href="/admin/encaissements" />
             <Kpi label="Stocks bas" value={String(d.low_stock_variants)} href="/admin/stock?bas=1" />
             <Kpi label="Nouveaux messages" value={String(d.new_contact_messages)} href="/admin/messages" />

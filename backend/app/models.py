@@ -16,6 +16,7 @@ from app.modules.delivery.models import Commune
 from app.modules.inventory.models import StockMovement
 from app.modules.orders.models import Order, OrderEvent, OrderItem
 from app.modules.payments.models import CashRemittance, Payment
+from app.modules.promotions.models import PromoCode
 from app.modules.settings.models import Setting
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "Product",
     "ProductImage",
     "ProductVariant",
+    "PromoCode",
     "RateLimitHit",
     "Setting",
     "StockMovement",

@@ -12,6 +12,7 @@ from app.core import rate_limit
 from app.core.config import settings
 from app.core.email import queue
 from app.core.errors import AppError
+from app.core.validators import normalize_ci_phone
 from app.modules.auth.deps import DB, BackOffice, CurrentUser, Owner, client_ip
 from app.modules.auth.models import User, UserRole
 from app.modules.cart import service as cart_service
@@ -52,6 +53,7 @@ from app.modules.orders.schemas import (
 )
 from app.modules.payments.models import Payment, PaymentMethod
 from app.modules.payments.providers import get_provider, sign
+from app.modules.promotions import service as promotions
 
 public = APIRouter(tags=["commandes"])
 admin = APIRouter(prefix="/admin/orders", tags=["admin: commandes"])
@@ -83,6 +85,8 @@ def _out(db: Session, order: Order, *, can_cancel: bool = False) -> OrderOut:
         delivery_fee=order.delivery_fee,
         delivery_delay_label=order.delivery_delay_label,
         subtotal=order.subtotal,
+        discount=order.discount,
+        promo_code=order.promo_code,
         total=order.total,
         payment_method=service.payment(db, order).method,
         items=[
@@ -126,13 +130,29 @@ def summaries(db: Session, user_id: int) -> list[OrderSummary]:
 def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB) -> CheckoutPreview:
     cart = cart_service.view(db, cart_service.find(db, user, request.cookies.get(CART_COOKIE)))
     commune = service.served_commune(db, data.commune_id)
-    total = cart.subtotal + commune.delivery_fee
+    promo_code, discount, promo_error = None, 0, None
+    if data.promo_code:
+        # Codes devinables : essais limités par adresse IP.
+        rate_limit.limit(f"promo:ip:{client_ip(request)}", 60, HOUR)
+        try:
+            phone = normalize_ci_phone(data.phone) if data.phone else None
+        except ValueError:
+            phone = None  # numéro en cours de saisie : vérifié à la validation
+        try:
+            promo, discount = promotions.apply(db, data.promo_code, cart.subtotal, phone)
+            promo_code = promo.code
+        except AppError as refused:
+            promo_error = refused.message
+    total = cart.subtotal - discount + commune.delivery_fee
     cod = data.payment_method == PaymentMethod.CASH_ON_DELIVERY
     return CheckoutPreview(
         cart=cart,
         commune_name=commune.name,
         delivery_fee=commune.delivery_fee,
         delivery_delay_label=commune.delay_label,
+        discount=discount,
+        promo_code=promo_code,
+        promo_error=promo_error,
         total=total,
         exceeds_cod_limit=total > cart_service.COD_LIMIT,
         can_order=bool(cart.items)
@@ -143,7 +163,7 @@ def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB)
 
 @public.post("/orders", status_code=201)
 def place_order(data: CheckoutIn, request: Request, user: OptionalUser, db: DB) -> OrderOut:
-    rate_limit.limit(f"order:ip:{client_ip(request)}", 10, HOUR)  # RG-51
+    rate_limit.limit(f"order:ip:{client_ip(request)}", settings.order_rate_limit, HOUR)  # RG-51
     cart = cart_service.find(db, user, request.cookies.get(CART_COOKIE))
     order, created = service.checkout(db, data, cart=cart, user=user)
     if (

@@ -14,9 +14,9 @@ Base : cadrage validé le 2026-10-26 (voir [`SUIVI.md`](../SUIVI.md)). Les élé
 - Livraison par **livreurs internes**, tarif par commune.
 - Commande **avec ou sans compte** ; numéro de téléphone obligatoire.
 
-Évolution après le MVP : **mobile money** (étape 11, §11), prêt mais désactivé tant que le prestataire n'est pas choisi.
+Évolutions après le MVP : **mobile money** (étape 11, §11), prêt mais désactivé tant que le prestataire n'est pas choisi ; **codes promo** (étape 13, §12).
 
-Hors MVP (prévu dans le modèle, pas développé) : carte bancaire, avis, favoris, codes promo, bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays, prix barrés.
+Hors MVP (prévu dans le modèle, pas développé) : carte bancaire, avis, favoris, bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays, prix barrés.
 
 ---
 
@@ -439,3 +439,24 @@ Décisions du porteur : prestataire **pas encore choisi** (interface neutre et p
 - Suivi et compte : bouton **Payer** tant que la commande attend son paiement.
 - Back-office : onglet **En attente de paiement**, moyen de paiement sur la commande, carte **Paiement à rembourser**.
 - Livreur : « Déjà payée · rien à encaisser ».
+
+---
+
+## 12. Évolution : codes promo (étape 13, 2026-10-26)
+
+Décisions du porteur : réduction en pourcentage ou montant fixe ; sur les articles, hors livraison ; limites par dates, nombre total et une fois par téléphone ; une commande annulée rend le code.
+
+### Règles
+
+- **RG-80** Un code donne soit un **pourcentage** des articles (1 à 90 %, plafond facultatif en FCFA, arrondi à l'inférieur), soit un **montant fixe** en FCFA. Il ne réduit jamais les frais de livraison, ni plus que le montant des articles.
+- **RG-81** Un seul code par commande. Saisi au récapitulatif ; un code refusé est expliqué (non valable, montant minimum, épuisé, déjà utilisé) et la commande reste possible sans lui.
+- **RG-82** Conditions facultatives par code : période de validité (début, fin), montant d'articles minimum, nombre total d'utilisations. Un code désactivé n'est plus accepté.
+- **RG-83** Un même numéro de téléphone (invité ou client) n'utilise un code qu'une fois.
+- **RG-84** Une utilisation = une commande non annulée portant le code. Une commande annulée (par le client, la boutique, ou faute de paiement mobile money) rend le code ; une commande livrée puis retournée le garde.
+- **RG-85** La réduction est figée dans la commande (code, montant) : modifier ou désactiver le code ensuite ne change pas les commandes passées. Le montant à payer (espèces ou mobile money) et le plafond de 300 000 FCFA du paiement à la livraison portent sur le total après réduction ; le panier, lui, applique encore le plafond sur les articles avant réduction.
+- **RG-86** Codes créés, modifiés, désactivés par le **Propriétaire** (journal d'audit) ; consultés par l'équipe. Un code déjà utilisé ne se supprime pas, il se désactive. Une commande ne peut pas devenir gratuite.
+
+### Écrans
+
+- Commande : champ **Code promo** dans le récapitulatif, ligne de réduction ; la réduction apparaît aussi dans le suivi, le compte, l'e-mail boutique et la fiche commande du back-office.
+- Back-office : page **Codes promo** (liste avec utilisations et remises accordées ; création et modification par le Propriétaire), indicateur **Remises** au tableau de bord (le chiffre d'affaires est net des remises).

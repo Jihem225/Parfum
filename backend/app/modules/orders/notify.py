@@ -65,7 +65,9 @@ def to_shop(order: Order, items: list[OrderItem], *, prepaid: bool = False) -> M
         settings.shop_notification_email,
         f"Nouvelle commande {order.number} — {fcfa(order.total)}",
         f"{order.customer_name} — {order.phone}\n{order.commune_name}, {order.address_line}\n\n"
-        f"{lines}\nLivraison : {fcfa(order.delivery_fee)}\n"
+        f"{lines}\n"
+        + (f"Code promo {order.promo_code} : −{fcfa(order.discount)}\n" if order.discount else "")
+        + f"Livraison : {fcfa(order.delivery_fee)}\n"
         + (
             f"Payée par mobile money : {fcfa(order.total)}. Déjà confirmée, à préparer."
             if prepaid

@@ -159,6 +159,9 @@ export type CheckoutPreview = {
   commune_name: string;
   delivery_fee: number;
   delivery_delay_label: string;
+  discount: number;
+  promo_code: string | null;
+  promo_error: string | null; // code saisi refusé : total sans réduction
   total: number;
   exceeds_cod_limit: boolean;
   can_order: boolean;
@@ -185,6 +188,8 @@ export type Order = {
   delivery_fee: number;
   delivery_delay_label: string;
   subtotal: number;
+  discount: number;
+  promo_code: string | null;
   total: number;
   payment_method: PaymentMethod;
   items: OrderLine[];
@@ -308,6 +313,7 @@ export type Dashboard = {
   date_from: string;
   date_to: string;
   revenue: number;
+  discounts: number;
   delivery_fees: number;
   delivered_orders: number;
   average_basket: number | null;
@@ -339,6 +345,23 @@ export type ContactMessage = {
   email: string | null;
   message: string;
   status: "NOUVEAU" | "TRAITE";
+};
+export type PromoKind = "PERCENT" | "FIXED";
+export type PromoCode = {
+  id: number;
+  code: string;
+  kind: PromoKind;
+  value: number;
+  max_discount: number | null;
+  min_subtotal: number | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  max_uses: number | null;
+  is_active: boolean;
+  note: string;
+  created_at: string;
+  uses: number;
+  discount_total: number;
 };
 export type EmailStatus = "PENDING" | "SENT" | "FAILED";
 export type OutboxEmail = {

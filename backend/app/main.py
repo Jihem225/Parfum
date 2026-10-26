@@ -38,6 +38,7 @@ from app.modules.orders.jobs import expire_forever
 from app.modules.orders.router import admin as orders_admin_router
 from app.modules.orders.router import public as orders_router
 from app.modules.payments.router import admin as cash_admin_router
+from app.modules.promotions.router import admin as promo_admin_router
 from app.modules.settings.router import admin as settings_admin_router
 from app.modules.settings.router import public as shop_router
 from app.modules.staff.router import router as staff_router
@@ -106,6 +107,7 @@ api.include_router(settings_admin_router)
 api.include_router(dashboard_admin_router)
 api.include_router(audit_admin_router)
 api.include_router(emails_admin_router)
+api.include_router(promo_admin_router)
 app.include_router(api)
 
 # Images du stockage local (développement) ; en production elles seront servies par R2.

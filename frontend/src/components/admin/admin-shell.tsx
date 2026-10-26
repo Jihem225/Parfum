@@ -19,6 +19,7 @@ const NAV: [string, string, boolean][] = [
   ["/admin/collections", "Collections et familles", false],
   ["/admin/stock", "Stock", false],
   ["/admin/encaissements", "Encaissements", false],
+  ["/admin/codes-promo", "Codes promo", false],
   ["/admin/clients", "Clients", false],
   ["/admin/messages", "Messages", false],
   ["/admin/emails", "E-mails", false],

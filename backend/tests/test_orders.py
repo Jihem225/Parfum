@@ -225,7 +225,8 @@ def test_price_change_is_reported_with_the_new_total(
     manager.patch(f"{ADMIN}/variants/{vid(perfume)}", json={"price": 40000})
     r = checkout(shop, cocody, expected_total=displayed)
     assert r.status_code == 409
-    assert r.json()["error"]["details"] == {"subtotal": 40000, "delivery_fee": 1500, "total": 41500}
+    details = r.json()["error"]["details"]
+    assert details == {"subtotal": 40000, "discount": 0, "delivery_fee": 1500, "total": 41500}
 
 
 def test_inactive_commune_empty_cart_and_stale_cart(

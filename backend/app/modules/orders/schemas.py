@@ -11,6 +11,7 @@ from app.modules.payments.models import PaymentMethod, PaymentStatus
 
 AddressLine = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=255)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
+PromoInput = Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, max_length=30)]
 OrderNumber = Annotated[
     str, StringConstraints(strip_whitespace=True, to_upper=True, min_length=3, max_length=20)
 ]
@@ -27,11 +28,14 @@ class CheckoutIn(BaseModel):
     expected_total: Annotated[int, Field(gt=0)]  # total affiché au client : un écart est signalé
     idempotency_key: Annotated[str, StringConstraints(min_length=16, max_length=64)]
     payment_method: PaymentMethod = PaymentMethod.CASH_ON_DELIVERY
+    promo_code: PromoInput = ""
 
 
 class PreviewIn(BaseModel):
     commune_id: int
     payment_method: PaymentMethod = PaymentMethod.CASH_ON_DELIVERY
+    promo_code: PromoInput = ""
+    phone: Annotated[str, StringConstraints(max_length=30)] = ""  # saisie en cours : tolérée
 
 
 class CheckoutPreview(BaseModel):
@@ -41,6 +45,9 @@ class CheckoutPreview(BaseModel):
     commune_name: str
     delivery_fee: int
     delivery_delay_label: str
+    discount: int  # code promo valable ; 0 sinon
+    promo_code: str | None  # code appliqué
+    promo_error: str | None  # motif du refus du code saisi (le total est alors sans réduction)
     total: int
     exceeds_cod_limit: bool
     can_order: bool
@@ -137,6 +144,8 @@ class OrderOut(BaseModel):
     delivery_fee: int
     delivery_delay_label: str
     subtotal: int
+    discount: int
+    promo_code: str | None
     total: int
     payment_method: PaymentMethod
     items: list[OrderLineOut]

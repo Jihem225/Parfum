@@ -49,7 +49,8 @@ class Order(IdMixin, TimestampMixin, Base):
         Index("ix_orders_status_created", "status", "created_at"),
         CheckConstraint("subtotal > 0", name="subtotal_positive"),
         CheckConstraint("delivery_fee >= 0", name="delivery_fee_positive"),
-        CheckConstraint("total = subtotal + delivery_fee", name="total_consistent"),
+        CheckConstraint("discount BETWEEN 0 AND subtotal", name="discount_range"),
+        CheckConstraint("total = subtotal - discount + delivery_fee", name="total_consistent"),
         CheckConstraint("delivery_attempts >= 0", name="attempts_positive"),
     )
 
@@ -71,7 +72,12 @@ class Order(IdMixin, TimestampMixin, Base):
     delivery_fee: Mapped[int]
     delivery_delay_label: Mapped[str] = mapped_column(String(60))
     subtotal: Mapped[int]
+    discount: Mapped[int] = mapped_column(default=0, server_default="0")  # code promo, articles
     total: Mapped[int]
+    promo_code_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("promo_codes.id", ondelete="RESTRICT"), index=True
+    )
+    promo_code: Mapped[str | None] = mapped_column(String(30))  # copie figée du code
     courier_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), index=True
     )

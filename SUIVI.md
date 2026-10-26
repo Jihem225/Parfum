@@ -4,6 +4,8 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
+**Étape 13 — Codes promo** (hors prompt, 2026-10-26 ; mise en ligne, prestataire et Pillow reportés par le porteur : « on le fera après ») : **validée le 2026-10-26** (« valide »). Décisions du porteur : % (plafond facultatif) ou montant fixe ; sur les articles hors livraison ; dates, nombre total et 1 fois par téléphone ; annulation = code rendu. Règles RG-80 à RG-86 (docs/02 §12).
+
 **Étape 12 — File d'envoi des e-mails** (hors prompt, choisie le 2026-10-26 en attendant les comptes de mise en ligne) : **validée le 2026-10-26** (« valide et pousse »). E-mails écrits dans `email_outbox` avec l'action, envoyés par une tâche de fond toutes les 5 s, nouveaux essais (1, 5, 15, 60, 180 min) puis « en échec », page **E-mails** du back-office avec renvoi, alerte au tableau de bord.
 
 **Étape 11 — Mobile money** (hors prompt, demandée le 2026-10-26 ; mise en ligne repoussée à la fin par le porteur) : 11.1 backend **validée le 2026-10-26** (« continue ce projet ») ; 11.2 frontend **validée le 2026-10-26** (« valide ») ; 11.3 documentation **validée le 2026-10-26** (« valide »). **Étape 11 terminée** ; reste la mise en ligne.
@@ -81,7 +83,7 @@ Décisions du porteur (2026-10-26) : prestataire **pas encore choisi** → inter
 
 Boutique (accueil, catalogue par collections, recherche, filtres genre / famille olfactive / prix / contenance / disponibilité, tri, fiche produit avec variantes 30/50/100 ml, panier, commande avec ou sans compte, confirmation, suivi), paiement à la livraison, livraison par zones, espace client de base (compte, adresses, commandes), back-office (tableau de bord simple, catalogue, stock avec mouvements et alertes, commandes avec statuts et livreur, encaissements, journal d'audit), pages légales, FAQ, contact.
 
-Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis, favoris, codes promo, bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays.
+Reporté après le MVP : mobile money (Orange, MTN, Wave ; fait à l'étape 11), carte bancaire, avis, favoris, codes promo (fait à l'étape 13), bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays.
 
 ## Fichiers du projet
 
@@ -112,6 +114,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
   - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
   - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
   - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` + `e2e/order.ts` (Playwright, CI ; étape 8 : recherche, rupture, annulation client, accès back-office).
+- Étape 13 : `backend/app/modules/promotions/{models,service,router}.py`, migration `0005` (table `promo_codes`, `orders.discount` / `promo_code_id` / `promo_code`, contrainte `total = subtotal - discount + delivery_fee`), `orders/{models,schemas,service,router,notify}.py`, `dashboard/router.py` (CA net, `discounts`), `core/config.py` (`ORDER_RATE_LIMIT`, 10 par défaut ; 100 dans le job e2e de la CI car les 13 parcours commandent depuis la même IP), `scripts/seed_demo.py` (code fictif `BIENVENUE10`), `backend/tests/test_promotions.py` ; frontend : récapitulatif (`commande/page.tsx`), `order-view.tsx`, fiche commande, `admin/(app)/codes-promo/page.tsx`, tableau de bord, `e2e/promo.spec.ts` ; docs 02 §12, 03, 10-guide, 10-bilan.
 - Étape 12 : `backend/app/core/{email,models}.py` (file d'envoi, `EmailMessage`), migration `0004`, `backend/app/modules/emails/router.py`, envois mis en file dans `orders/{router,jobs}.py`, `delivery/courier.py`, `auth/router.py`, `contact/router.py`, `inventory/service.py` (alerte avant validation), `dashboard/router.py` (`failed_emails`), `main.py` (tâche d'envoi) ; `backend/tests/{conftest,test_email}.py` (+ tests adaptés) ; `frontend/src/app/admin/(app)/emails/page.tsx`, menu et alerte du tableau de bord ; `e2e/order.ts` (e-mail), `e2e/backoffice.spec.ts` ; docs 03 §1 et §8, 10-bilan, 10-guide-back-office. Correctif : règles mobile money de docs/02 renumérotées RG-70 à RG-76 (collision avec RG-50 à RG-54).
 - Étape 11.3 : `docs/02-conception-fonctionnelle.md` §11 (RG-70 à RG-76, statuts, écrans), `docs/03-conception-technique.md` §7 (routes mobile money), `docs/09-deploiement.md` §9 (activer un prestataire réel, textes du site à changer), `docs/10-guide-back-office.md` (commandes payées, remboursement), `docs/10-bilan.md`. Textes publics du site **volontairement inchangés** (« paiement à la livraison ») : le mobile money reste désactivé en production tant qu'aucun prestataire n'est branché.
 - Étape 11.2 : `frontend/src/app/(boutique)/commande/` (choix du paiement, redirection, `paiement/` page de retour et nouvel essai, `confirmee` « payée »), `frontend/src/app/paiement/simulation/` (faux prestataire), `frontend/src/components/{pay-button,order-view}.tsx`, panier, compte, back-office (onglet « En attente de paiement », moyen de paiement, livraison sans encaissement, remboursement d'un paiement reçu sur une commande annulée, bordereau), livreur (« rien à encaisser »), `src/lib/{types,format,schemas}.ts`, `e2e/paiement.spec.ts` + scénario mobile money dans `e2e/backoffice.spec.ts`, CI (`PAYMENT_PROVIDER=simulation` dans le job e2e), `backend/tests/conftest.py` (tests isolés du `.env` local).
@@ -180,6 +183,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 12 : frontend lint / typecheck / Vitest / build | OK / OK / 12/12 / OK |
 | 2026-10-26 | 12 : E2E local, base neuve, `CI=1` | 24/24, 0 relance ; 18 e-mails mis en file, tous envoyés au 1er essai par la tâche de fond (console). Premier essai rouge : page E-mails sans rafraîchissement (parcours de 3 s < cycle de 5 s), corrigé par un rafraîchissement automatique |
 | 2026-10-26 | CI GitHub run 40392680792 (commit 5eea38d : étapes 11.2 à 12) | backend 164/164, frontend 12/12, **E2E 24/24** : verts |
+| 2026-10-26 | 13 : backend `pytest`, `ruff`, `mypy` ; migration 0005 (`upgrade`, `alembic check`, `downgrade 0004`, `upgrade`) | 171/171 (7 nouveaux, dont 8 commandes simultanées sur un code limité à 2 → 2 acceptées ; sans le verrou : échec 3 fois sur 3) ; OK ; OK ; OK |
+| 2026-10-26 | 13 : frontend lint / typecheck / Vitest / build ; E2E local base neuve (`CI=1`, `ORDER_RATE_LIMIT=100`) | OK / OK / 12/12 / OK ; **26/26**, 0 relance ; capture Pixel 7 du récapitulatif avec code |
 | — | E2E Playwright (ancien poste macOS 13) | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
 
 ## Étape 8 — matrice des parcours
@@ -222,7 +227,7 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-Étapes 11 et 12 poussées (CI verte, run 40392680792). Prochaine étape : choix du prestataire de mobile money (docs/09 §9) et mise en ligne. Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+Étapes 11 à 13 poussées. Reportés par le porteur : choix du prestataire de mobile money (docs/09 §9) et mise en ligne. Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
 À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

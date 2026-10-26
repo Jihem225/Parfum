@@ -111,6 +111,7 @@ export default function CommandeDetailPage() {
                   <span>{formatFCFA(i.line_total)}</span>
                 </div>
               ))}
+              {o.discount > 0 && <div className="flex justify-between text-encre-douce"><span>Code {o.promo_code}</span><span>−{formatFCFA(o.discount)}</span></div>}
               <div className="flex justify-between text-encre-douce"><span>Livraison</span><span>{formatFCFA(o.delivery_fee)}</span></div>
               <div className="flex justify-between border-t border-filet pt-2 font-bold"><span>Total · {prepaid ? "mobile money" : "espèces à encaisser"}</span><span>{formatFCFA(o.total)}</span></div>
             </div>
@@ -195,7 +196,7 @@ function ReturnForm({ order, onDone }: { order: AdminOrder; onDone: (o: AdminOrd
   const delivered = order.status === "LIVREE";
   const [lines, setLines] = useState(() => Object.fromEntries(order.items.map((i) => [i.variant_id, { restocked: i.quantity, lost: 0 }])));
   const [note, setNote] = useState("");
-  const [refund, setRefund] = useState(String(order.subtotal));
+  const [refund, setRefund] = useState(String(order.subtotal - order.discount)); // articles payés
   const submit = useMutation({
     mutationFn: () =>
       api<AdminOrder>(`/admin/orders/${order.number}/return`, {

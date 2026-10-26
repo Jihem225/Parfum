@@ -24,11 +24,13 @@
 - Fiches produit 30/50/100 ml avec stock affiché.
 - Panier visiteur ou client, commande sans compte, confirmation, suivi par numéro + téléphone.
 - Paiement à la livraison ; mobile money prêt (étape 11), à activer avec un prestataire réel.
+- Codes promo (étape 13) : pourcentage ou montant, sur les articles, limites par dates, nombre et téléphone.
 - Compte client : adresses, commandes, annulation.
 - Contact, pages d'information, sitemap.
 
 **Back-office**
-- Tableau de bord.
+- Tableau de bord (chiffre d'affaires net des remises).
+- Codes promo, page E-mails (envois en échec, renvoi).
 - Commandes : appels, préparation, livreur, échecs, retours, impression.
 - Catalogue et images, stock (mouvements, alertes).
 - Encaissements par livreur et remises de caisse.
@@ -54,6 +56,7 @@
 | Frontend Vitest | 11/11 réussis |
 | Parcours E2E Playwright (mobile + ordinateur) | 18/18 réussis |
 | Lint, typage strict (mypy, TypeScript), build | OK |
+| Codes promo (étape 13, local) | backend 171/171 (dont 7 codes promo, avec 8 commandes simultanées sur un code limité à 2 : contrôle par mutation sans verrou → échec), Vitest 12/12, E2E 26/26 |
 | File d'envoi des e-mails (étape 12, local) | backend 164/164 (dont 8 sur la file : transaction, nouveaux essais, abandon, refus, purge, renvoi), Vitest 12/12, E2E 24/24 (e-mail envoyé par la tâche de fond et visible au back-office) |
 | Mobile money (étape 11, local, commit 2c6d568) | backend 156/156, Vitest 12/12, E2E 24/24 (dont 3 parcours mobile money × 2 appareils), avec le prestataire de simulation |
 | Non exécutés | paiement avec un vrai prestataire (pas encore choisi) ; écran de retour / remboursement dans le navigateur (couvert en API) ; vrai téléphone et Safari ; charge ; services réels R2, Resend et Render (comptes à créer) |
@@ -62,7 +65,7 @@
 
 - **Paiement** : en production, à la livraison uniquement tant qu'aucun prestataire de mobile money n'est branché. Le parcours complet existe et est testé avec un prestataire simulé ; brancher le vrai : `docs/09-deploiement.md` §9. La carte bancaire reste à faire.
 - **Contenus provisoires** : nom « Projet Parfums », préfixe `PP`, textes légaux marqués « [À compléter …] » (CGV, mentions légales, confidentialité : à faire relire par un juriste), photos.
-- **Hors MVP** : avis, favoris, codes promo, bannières, newsletter, paniers abandonnés, permissions fines, multi-pays.
+- **Hors MVP** : avis, favoris, bannières, newsletter, paniers abandonnés, permissions fines, multi-pays.
 - **Exploitation** :
   - pas de Sentry ni de journaux JSON : journaux et notifications de Render uniquement ;
   - e-mails : file d'envoi avec nouveaux essais depuis l'étape 12 ; la tâche d'envoi tourne dans le processus de l'API (un redémarrage la relance, rien n'est perdu) ;
@@ -93,5 +96,4 @@
 **Évolutions suggérées, par ordre d'utilité :**
 1. Brancher le prestataire de mobile money (`docs/09-deploiement.md` §9).
 2. Sentry.
-3. Codes promo.
-4. Préproduction quand l'équipe grandit.
+3. Préproduction quand l'équipe grandit.

@@ -30,6 +30,7 @@ from app.modules.catalog.models import (
 )
 from app.modules.delivery.models import Commune
 from app.modules.inventory.models import MovementType, StockMovement
+from app.modules.promotions.models import PromoCode, PromoKind
 
 COLLECTIONS = [("Signatures", "signatures"), ("Bois & Épices", "bois-epices")]
 FAMILIES = [
@@ -148,6 +149,15 @@ def main() -> int:
         families = {slug: OlfactoryFamily(name=n, slug=slug) for n, slug in FAMILIES}
         db.add_all([*collections.values(), *families.values()])
         db.add_all(Commune(name=n, delivery_fee=f, delay_label=d) for n, f, d in COMMUNES)
+        db.add(
+            PromoCode(
+                code="BIENVENUE10",
+                kind=PromoKind.PERCENT,
+                value=10,
+                max_discount=5000,
+                note="Exemple fictif",
+            )
+        )
         db.flush()
         for name, coll, fam, gender, notes, color, variants in PRODUCTS:
             slug = name.lower().replace("'", "-").replace(" ", "-").replace("é", "e")
@@ -190,7 +200,8 @@ def main() -> int:
                     )
         db.commit()
     print(
-        f"Catalogue d'exemple créé : {len(PRODUCTS)} parfums, {len(COMMUNES)} communes (fictifs)."
+        f"Catalogue d'exemple créé : {len(PRODUCTS)} parfums, {len(COMMUNES)} communes, "
+        "code promo BIENVENUE10 (fictifs)."
     )
     return 0
 

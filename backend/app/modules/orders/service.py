@@ -32,6 +32,7 @@ from app.modules.orders.notify import fcfa
 from app.modules.orders.schemas import CheckoutIn
 from app.modules.payments.models import Payment, PaymentMethod, PaymentStatus
 from app.modules.payments.providers import Notification, get_provider
+from app.modules.promotions import service as promotions
 
 S = OrderStatus
 TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
@@ -107,7 +108,16 @@ def checkout(
             summary.model_dump(mode="json"),
         )
     commune = served_commune(db, data.commune_id)
-    total = summary.subtotal + commune.delivery_fee
+    promo, discount = None, 0
+    if data.promo_code:  # verrouillé : limites respectées même avec des commandes simultanées
+        promo, discount = promotions.apply(
+            db, data.promo_code, summary.subtotal, data.phone, lock=True
+        )
+    total = summary.subtotal - discount + commune.delivery_fee
+    if total <= 0:
+        raise AppError(
+            422, "PROMO_INVALID", "Ce code promo ne peut pas rendre la commande gratuite."
+        )
     mobile = data.payment_method == PaymentMethod.MOBILE_MONEY
     if mobile and get_provider() is None:
         raise AppError(
@@ -125,7 +135,12 @@ def checkout(
             409,
             "PRICE_CHANGED",
             "Le montant de votre commande a changé : vérifiez le nouveau total.",
-            {"subtotal": summary.subtotal, "delivery_fee": commune.delivery_fee, "total": total},
+            {
+                "subtotal": summary.subtotal,
+                "discount": discount,
+                "delivery_fee": commune.delivery_fee,
+                "total": total,
+            },
         )
 
     order = Order(
@@ -142,7 +157,10 @@ def checkout(
         delivery_fee=commune.delivery_fee,
         delivery_delay_label=commune.delay_label,
         subtotal=summary.subtotal,
+        discount=discount,
         total=total,
+        promo_code_id=promo.id if promo else None,
+        promo_code=promo.code if promo else None,
     )
     db.add(order)
     db.flush()

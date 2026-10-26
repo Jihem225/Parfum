@@ -45,6 +45,12 @@ export function OrderView({ order }: { order: Order }) {
             <span>{formatFCFA(i.line_total)}</span>
           </div>
         ))}
+        {order.discount > 0 && (
+          <div className="flex justify-between text-encre-douce">
+            <span>Code {order.promo_code}</span>
+            <span>−{formatFCFA(order.discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-encre-douce">
           <span>Livraison ({order.commune_name}, {order.delivery_delay_label})</span>
           <span>{formatFCFA(order.delivery_fee)}</span>

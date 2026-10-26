@@ -182,7 +182,8 @@ Le stock est porté par la variante (une seule réserve physique) : pas de table
 
 | Table | Colonnes principales | Contraintes / index |
 |---|---|---|
-| `orders` | **number** (`PP-10001`…), user_id (vide si invité), **status**, idempotency_key, **copie figée** : customer_name, phone, email, commune_name, address_line, landmark, delivery_fee, delivery_delay_label ; subtotal, total, courier_id, delivery_attempts, cancel_reason | number unique ; idempotency_key unique ; index (status, created_at), phone, user_id, courier_id ; `total = subtotal + delivery_fee` |
+| `orders` | **number** (`PP-10001`…), user_id (vide si invité), **status**, idempotency_key, **copie figée** : customer_name, phone, email, commune_name, address_line, landmark, delivery_fee, delivery_delay_label ; subtotal, discount, total, promo_code_id, promo_code (copie), courier_id, delivery_attempts, cancel_reason | number unique ; idempotency_key unique ; index (status, created_at), phone, user_id, courier_id, promo_code_id ; `total = subtotal - discount + delivery_fee`, `discount BETWEEN 0 AND subtotal` |
+| `promo_codes` (étape 13) | **code** (majuscules), kind (`PERCENT`, `FIXED`), value, max_discount, min_subtotal, starts_at, ends_at, max_uses, is_active, note | code unique ; pourcentage ≤ 90 ; fin après début ; utilisations comptées sur les commandes non annulées |
 | `order_items` | order_id, variant_id, **copie figée** : product_name, volume_ml, sku, unit_price ; quantity, line_total | `line_total = unit_price × quantity` ; la variante ne peut pas être supprimée si elle est référencée |
 | `order_events` | order_id, **kind** (`STATUS_CHANGE`, `CALL`, `DELIVERY_ATTEMPT`, `NOTE`), from_status, to_status, call_result, failure_reason, note, user_id | index (order_id, created_at) ; historique en ajout seul |
 | `communes` | name, delivery_fee, delay_label, is_active, position | name unique ; `delivery_fee >= 0` |
@@ -208,7 +209,8 @@ L'adresse et les articles sont **recopiés** dans la commande (RG-26) : modifier
 | `roles`, `permissions` | non créées | 4 rôles fixes : une colonne `role` + une table de droits dans le code suffisent ; tables à ajouter avec les permissions granulaires |
 | `inventory` | fusionnée | stock porté par `product_variants` |
 | `shipments` | fusionnée | une livraison par commande ; tentatives dans `order_events` |
-| `promotions`, `promotion_usages`, `reviews`, `wishlists` | reportées | hors MVP |
+| `promotions`, `promotion_usages` | remplacées | `promo_codes` (étape 13) ; les utilisations sont les commandes qui portent le code |
+| `reviews`, `wishlists` | reportées | hors MVP |
 | `notifications` | remplacée | file d'envoi `email_outbox` (étape 12) ; l'historique de la commande fait foi |
 
 ---
@@ -324,6 +326,8 @@ Documentation OpenAPI générée automatiquement (`/api/v1/docs`, désactivée e
 | POST | `/payments/simulation/{number}` | simulation uniquement (`PAYMENT_PROVIDER=simulation`) : produit l'avis signé |
 | POST | `/admin/orders/{number}/refund` | remboursement enregistré d'une commande payée puis annulée (Propriétaire) |
 
+**Codes promo** (étape 13) : `promo_code` (et `phone`, toléré en cours de saisie) dans `POST /checkout/preview`, qui renvoie `discount`, `promo_code` ou `promo_error` (essais limités à 60 par heure et par IP) ; `promo_code` dans `POST /orders`, revérifié avec le code verrouillé (`FOR UPDATE`) pour respecter les limites face aux commandes simultanées. Back-office : `GET /admin/promo-codes` (équipe), `POST`, `PUT /{id}`, `DELETE /{id}` (Propriétaire, code jamais utilisé).
+
 Le jeton `token` (HMAC du numéro avec `SECRET_KEY`) est remis à l'acheteur avec la commande : sans lui, on ne peut ni payer ni lire l'état du paiement. Les prestataires sont derrière deux opérations (`checkout_url`, `read`) dans `backend/app/modules/payments/providers.py`. Une tâche de fond annule les commandes non payées après 30 minutes. Côté frontend : `/commande/paiement` (retour), `/paiement/simulation` (faux prestataire).
 
 ---
@@ -429,6 +433,7 @@ Liste exhaustive (mise à jour à l'étape 10). En production, les valeurs sont 
 | `RESEND_API_KEY`, `EMAIL_FROM` | recommandé | e-mails ; sans clé : console (dév.) ou erreur journalisée (prod.) |
 | `SHOP_NOTIFICATION_EMAIL` | recommandé | destinataire des alertes (nouvelles commandes, stock bas) |
 | `ORDER_NUMBER_PREFIX` | non | préfixe des numéros de commande (défaut `PP`) |
+| `ORDER_RATE_LIMIT` | non | commandes par adresse IP et par heure (défaut 10) ; relevé seulement pour les parcours E2E de la CI |
 | `PAYMENT_PROVIDER`, `PAYMENT_WEBHOOK_SECRET` | non | mobile money : vide = désactivé, `simulation` = faux paiements (refusé en production) ; prestataire réel à brancher |
 | `TEST_DATABASE_URL` | tests | base dédiée aux tests pytest |
 | `SEED_STAFF_PASSWORD`, `SEED_MANAGER_TOTP_SECRET` | CI | comptes de test E2E créés par `seed_demo` (jamais en production) |

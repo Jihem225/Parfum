@@ -16,7 +16,7 @@ Pour le Propriétaire, les Gestionnaires et les livreurs. Adresse : `https://<do
 
 | Rôle | Peut |
 |---|---|
-| Propriétaire | tout, plus : **Boutique et livraison**, **Collaborateurs**, **Journal d'audit**, retour d'une commande livrée, remboursement d'un paiement mobile money |
+| Propriétaire | tout, plus : **Boutique et livraison**, **Collaborateurs**, **Journal d'audit**, retour d'une commande livrée, remboursement d'un paiement mobile money, création et modification des **codes promo** |
 | Gestionnaire | commandes, produits, collections, stock, encaissements, clients, messages |
 | Livreur | voir **ses** livraisons, déclarer « livrée et encaissée » ou un échec |
 
@@ -64,6 +64,20 @@ Dans la commande : **Retour client et remboursement** (colis revenu après un é
 1. Pour chaque article, indiquez combien reviennent **En stock** (revendables) et combien sont **Perdus** (cassés…).
 2. Commande livrée : indiquez le **Montant remboursé en espèces**. Le remboursement n'est possible qu'une fois l'argent de cette commande remis en caisse.
 3. Cette action est définitive.
+
+## Codes promo
+
+Page **Codes promo** : chaque code avec ses conditions, son nombre d'utilisations et le total des remises accordées. Le Propriétaire seul crée et modifie.
+
+1. **Nouveau code** : le code (lettres, chiffres, tirets, ex. `BIENVENUE10`), puis la réduction :
+   - **Pourcentage** (1 à 90 %) des articles, avec un plafond en FCFA facultatif ;
+   - ou **Montant FCFA** fixe.
+2. Conditions facultatives : montant d'articles minimum, début et fin (heure d'Abidjan), nombre total d'utilisations. Chaque numéro de téléphone ne l'utilise qu'une fois, dans tous les cas.
+3. La réduction ne porte jamais sur la livraison. Le client saisit le code au récapitulatif de sa commande ; le livreur encaisse le total après réduction.
+4. **Désactiver** arrête le code tout de suite ; un code jamais utilisé peut être supprimé. Modifier un code ne change pas les commandes déjà passées.
+5. Une commande annulée rend le code (au client et au compteur).
+
+Le tableau de bord affiche les **Remises** de la période ; le chiffre d'affaires est net des remises.
 
 ## Produits
 
