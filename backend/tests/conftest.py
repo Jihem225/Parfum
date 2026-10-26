@@ -61,3 +61,35 @@ def client(db: Session) -> Iterator[TestClient]:
         http.headers["X-CSRF-Token"] = http.cookies["csrf"]
         yield http
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def manager(client: TestClient, db: Session) -> TestClient:
+    """Client connecté en Gestionnaire (double authentification active)."""
+    import pyotp
+
+    from app.core import security
+    from app.modules.auth.models import User, UserRole
+
+    secret = pyotp.random_base32()
+    db.add(
+        User(
+            email="gestion@exemple.com",
+            password_hash=security.hash_password("motdepasse-gestion"),
+            full_name="Awa Koné",
+            phone="0708123456",
+            role=UserRole.MANAGER,
+            totp_secret=security.encrypt(secret),
+        )
+    )
+    db.flush()
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "gestion@exemple.com",
+            "password": "motdepasse-gestion",
+            "totp_code": pyotp.TOTP(secret).now(),
+        },
+    )
+    assert response.status_code == 200
+    return client

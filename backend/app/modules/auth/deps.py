@@ -71,3 +71,7 @@ def require_roles(*roles: UserRole, allow_without_totp: bool = False) -> Callabl
         return user
 
     return dependency
+
+
+# Gestionnaire ou Propriétaire : catalogue, stock, commandes (matrice des rôles, conception §7).
+BackOffice = Annotated[User, Depends(require_roles(UserRole.MANAGER, UserRole.OWNER))]

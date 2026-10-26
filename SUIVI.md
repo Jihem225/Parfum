@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.3 — Backend : collections et familles olfactives** : en cours.
+**Étape 6.4 — Backend : produits, contenances et images** : en cours.
+
+- Étape 6.3 — Collections et familles olfactives : **validée le 2026-10-26**.
 
 - Étape 6.2 — Authentification et permissions : **validée le 2026-10-26**.
 
@@ -67,6 +69,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/core/{errors,security,rate_limit,csrf,audit,email,validators}.py` — socle commun (6.2, commité)
 - `backend/app/modules/auth/{schemas,service,deps,router}.py`, `backend/app/modules/staff/router.py`, `backend/app/scripts/create_owner.py` — authentification, collaborateurs (6.2, commité)
 - `backend/tests/test_auth.py`, `backend/tests/test_staff.py` (6.2, commité)
+- `backend/app/core/slug.py`, `backend/app/modules/catalog/{schemas,taxonomy,router}.py`, `backend/tests/test_taxonomy.py` — collections et familles (6.3, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -88,6 +91,9 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.2 : `pytest` | 48/48 réussis (santé, schéma, authentification, collaborateurs) |
 | 2026-10-26 | 6.2 : parcours HTTP réel via le relais Next.js | CSRF refusé sans jeton (403), inscription 201 + cookie HttpOnly, /me 200, déconnexion 204, /me 401, admin anonyme 401, mauvais mot de passe 401 |
 | 2026-10-26 | 6.2 : script `create_owner` (base de test) | Propriétaire créé, Argon2id, audit tracé |
+| 2026-10-26 | CI GitHub (commit 6.2) | backend, frontend, e2e : verts |
+| 2026-10-26 | 6.3 : `pytest` | 56/56 réussis |
+| 2026-10-26 | 6.3 : appels réels via le relais | listes publiques 200, collection inconnue 404, écriture anonyme 401 |
 | — | E2E Playwright | non exécuté en local (Chromium indisponible sur macOS 13) → job `e2e` de la CI, pas encore exécuté (dépôt non poussé) |
 
 ## Problèmes connus / risques
@@ -103,6 +109,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Obtenir la validation de l'étape 6.2 (puis commit + push), puis étape 6.3 : collections et familles olfactives (la marque étant unique, « marques et catégories » devient « collections et familles »).
+Obtenir la validation de l'étape 6.3 (puis commit + push), puis étape 6.4 : produits, contenances et images (création, publication RG-03, archivage RG-04, catalogue public avec recherche, filtres, tri, fiche produit et produits similaires).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

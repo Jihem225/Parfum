@@ -11,6 +11,8 @@ from app.core.csrf import csrf_middleware
 from app.core.db import get_db
 from app.core.errors import install_error_handlers
 from app.modules.auth.router import router as auth_router
+from app.modules.catalog.router import admin as catalog_admin_router
+from app.modules.catalog.router import public as catalog_router
 from app.modules.staff.router import router as staff_router
 
 is_prod = settings.app_env == "production"
@@ -38,4 +40,6 @@ def health(db: Annotated[Session, Depends(get_db)]) -> JSONResponse:
 
 api.include_router(auth_router)
 api.include_router(staff_router)
+api.include_router(catalog_router)
+api.include_router(catalog_admin_router)
 app.include_router(api)
