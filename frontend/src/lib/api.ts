@@ -70,5 +70,7 @@ export async function api<T>(path: string, { method, json, form }: Options = {})
 
 /** Message lisible pour n'importe quelle erreur attrapée. */
 export function errorMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : "Une erreur est survenue. Réessayez.";
+  if (!(error instanceof ApiError)) return "Une erreur est survenue. Réessayez.";
+  // Formulaires sans erreurs par champ : on montre la première raison précise du serveur.
+  return Object.values(error.fieldErrors())[0] ?? error.message;
 }

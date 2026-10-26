@@ -29,7 +29,7 @@ export default function PanierPage() {
           <ul className="flex flex-col divide-y divide-filet border-y border-filet">
             {cart.items.map((line) => (
               <li key={line.variant_id} className="flex gap-3 py-4">
-                <Link href={`/parfums/${line.product_slug}`} className="w-20 flex-none">
+                <Link href={`/parfums/${line.product_slug}`} className="w-20 flex-none" aria-hidden tabIndex={-1}>
                   <ProductImage image={line.image} productId={line.variant_id} name={line.product_name} className="aspect-[4/5]" />
                 </Link>
                 <div className="flex flex-1 flex-col gap-1">
