@@ -417,13 +417,13 @@ Décisions du porteur : prestataire **pas encore choisi** (interface neutre et p
 
 ### Règles
 
-- **RG-50** Le client choisit à la commande : **espèces à la livraison** ou **mobile money**. Le choix n'apparaît que si le paiement en ligne est activé.
-- **RG-51** Le plafond de 300 000 FCFA (RG-23) ne vaut que pour le paiement à la livraison. Au-delà, seul le mobile money est proposé.
-- **RG-52** Une commande mobile money réserve le stock dès sa création, au statut **En attente de paiement**, puis le client est envoyé sur la page de paiement du prestataire.
-- **RG-53** Paiement reçu (avis signé du prestataire, montant identique au total) : commande **Confirmée** sans appel téléphonique ; e-mails client et boutique envoyés à ce moment-là.
-- **RG-54** Paiement refusé ou abandonné : la commande reste en attente, le client peut réessayer depuis la page de retour ou le suivi. **Sans paiement 30 minutes après la création, la commande est annulée** et le stock libéré.
-- **RG-55** Le livreur n'encaisse rien sur une commande payée ; elle n'apparaît pas dans les encaissements.
-- **RG-56** Commande payée puis annulée (par le client, la boutique, ou paiement arrivé après l'expiration) : le paiement reste « Payé » ; le Propriétaire rembourse chez le prestataire, puis enregistre le remboursement dans le back-office. Un retour après livraison est remboursé de la même façon.
+- **RG-70** Le client choisit à la commande : **espèces à la livraison** ou **mobile money**. Le choix n'apparaît que si le paiement en ligne est activé.
+- **RG-71** Le plafond de 300 000 FCFA (RG-23) ne vaut que pour le paiement à la livraison. Au-delà, seul le mobile money est proposé.
+- **RG-72** Une commande mobile money réserve le stock dès sa création, au statut **En attente de paiement**, puis le client est envoyé sur la page de paiement du prestataire.
+- **RG-73** Paiement reçu (avis signé du prestataire, montant identique au total) : commande **Confirmée** sans appel téléphonique ; e-mails client et boutique envoyés à ce moment-là.
+- **RG-74** Paiement refusé ou abandonné : la commande reste en attente, le client peut réessayer depuis la page de retour ou le suivi. **Sans paiement 30 minutes après la création, la commande est annulée** et le stock libéré.
+- **RG-75** Le livreur n'encaisse rien sur une commande payée ; elle n'apparaît pas dans les encaissements.
+- **RG-76** Commande payée puis annulée (par le client, la boutique, ou paiement arrivé après l'expiration) : le paiement reste « Payé » ; le Propriétaire rembourse chez le prestataire, puis enregistre le remboursement dans le back-office. Un retour après livraison est remboursé de la même façon.
 
 ### Statuts ajoutés
 
