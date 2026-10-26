@@ -91,7 +91,14 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/modules/payments/{schemas,router}.py`, `backend/app/modules/delivery/courier.py`, « Livrée » et `/checkout/preview` dans `orders/`, `backend/tests/test_cash.py` — livraison encaissée, espèces par livreur, remises de caisse (6.8, commité)
 - `backend/app/modules/customers/{schemas,router}.py` (profil, adresses), échec / nouvelle tentative / retour dans `orders/service.py`, `orders/router.py` et `delivery/courier.py`, `backend/tests/test_delivery.py` (6.9, commité)
 - `backend/app/modules/{dashboard,audit}/router.py`, `contact/router.py`, `settings/router.py`, `customers/admin.py`, `core/validators.py` (numéros fixes acceptés), `backend/tests/test_backoffice.py` (6.10, commité)
-- `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
+- `frontend/` — Next.js 16.4.3, étape 7 (commité) :
+  - 7.1 socle : `src/lib/{api,server-api,types,format,schemas,hooks,navigation}.ts`, `src/components/{ui,providers,product-image,order-view}.tsx`, relais `/media`, en-têtes de sécurité, pages d'erreur ;
+  - 7.2 boutique `src/app/(boutique)/` : accueil, `parfums`, `parfums/[slug]`, `collections`, `panier`, `commande` (+ `confirmee`), `suivi`, `contact`, `infos/[page]`, `sitemap.ts`, `robots.ts` ;
+  - 7.3 compte `src/app/(boutique)/compte/` : connexion, inscription, mot de passe oublié / réinitialisation, profil, adresses, commandes (+ annulation) ;
+  - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
+  - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
+  - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` (Playwright, CI).
+- `backend/app/scripts/seed_demo.py` — catalogue d'exemple fictif (+ comptes de test E2E si variables fournies) ; route `GET /admin/couriers` ; `variant_id` sur les lignes de commande.
 
 ## Tests exécutés
 
@@ -142,6 +149,9 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - macOS 13 du poste de développement : plus de paquets Homebrew précompilés, pas de Chromium Playwright. Contournements : uv via pip, Postgres.app, E2E en CI.
 - ESLint 9 n'est plus maintenu ; passage à ESLint 10 quand les plugins de Next.js le supporteront.
 - Images : stockage local en développement (`backend/media/`) ; Cloudflare R2 à brancher à l'étape 9.
+- Écarts de l'étape 7 par rapport à la conception : composants maison à la charte au lieu de shadcn/ui (pas d'installation de code externe, moins de dépendances) ; `<img>` au lieu de `next/image` (images déjà optimisées en WebP par le backend, compatible R2) ; pas de QR code pour la 2FA (clé + lien `otpauth://`).
+- CI E2E lente (≈ 12 min) : le téléchargement des paquets système de Chromium depuis le miroir Ubuntu est très lent ; les tests eux-mêmes prennent quelques secondes. Piste étape 9 : image Docker officielle Playwright ou cache.
+- Base de développement : contient le catalogue d'exemple (fictif) et les comptes `gestion-e2e@exemple.com` / `livreur-e2e@exemple.com` de vérification locale.
 - `uv` n'est pas dans le PATH par défaut : `export PATH="$HOME/Library/Python/3.9/bin:$PATH"`.
 
 ## Prochaine action

@@ -12,7 +12,7 @@ test("création de compte, adresse, déconnexion puis connexion", async ({ page 
 
   await page.getByRole("link", { name: "Mes adresses" }).click();
   await page.getByLabel("Destinataire").fill("Aya Kouassi");
-  await page.getByLabel("Téléphone").fill("0708123456");
+  await page.getByLabel("Téléphone").filter({ visible: true }).fill("0708123456"); // page précédente gardée masquée par Next
   await page.getByLabel("Commune").selectOption({ index: 1 });
   await page.getByLabel(/^Adresse$/).fill("Riviera 3, villa 12");
   await page.getByRole("button", { name: "Ajouter" }).click();
