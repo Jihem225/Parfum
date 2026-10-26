@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Commande — coordonnées et livraison</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#FAFAF8}
+a{color:#1A1613}a:hover{color:#9A5B13}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:#1A1613;padding:0;cursor:pointer;position:relative;text-decoration:none}
+.serif{font-family:'Bodoni Moda',serif;font-weight:500}
+.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.f input,.f select,.f textarea{height:48px;border:1px solid #CFC8BE;background:#fff;padding:0 12px;font:400 15px 'Manrope',sans-serif;color:#1A1613;border-radius:0}
+.f textarea{height:76px;padding:10px 12px;resize:none}
+.hint{font-weight:400;font-size:12px;color:#6B635B}
+.step{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-family:'Bodoni Moda',serif;font-weight:500;font-size:22px}
+.num{width:26px;height:26px;border-radius:13px;background:#1A1613;color:#FAFAF8;font:700 13px 'Manrope',sans-serif;display:inline-flex;align-items:center;justify-content:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 1840px; background: #FAFAF8; color: #1A1613; font-family: 'Manrope', sans-serif; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 6px; border-bottom: 1px solid #E2DDD5">
+    <a href="Panier.dc.html" class="ib" aria-label="Retour au panier"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+    <span style="display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Commande</span>
+    <span style="width: 44px"></span>
+  </header>
+
+  <sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+    <div style="padding: 48px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px">
+      <div style="width: 64px; height: 64px; border-radius: 32px; background: #E3EDE7; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#2F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></div>
+      <h1 class="serif" style="margin: 0; font-size: 30px">Merci, commande reçue</h1>
+      <div style="font-size: 15px">Numéro de commande<br><strong style="font-size: 22px; letter-spacing: .04em">PP-10234</strong></div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3D342D">Nous vous appelons au <strong>07 08 12 34 56</strong> pour confirmer avant l'envoi. Vous paierez <strong>{{total}}</strong> en espèces au livreur.</p>
+      <a href="Compte.dc.html" style="width: 100%; display: flex; align-items: center; justify-content: center; height: 52px; background: #1A1613; color: #FAFAF8; text-decoration: none; font-size: 15px; font-weight: 600; margin-top: 8px">Suivre ma commande</a>
+      <a href="Main.dc.html" style="font-size: 14px; font-weight: 600; padding: 10px">Retour à la boutique</a>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{editing}}" hint-placeholder-val="{{true}}">
+    <form style="padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 28px">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #F1EEE9; font-size: 14px">
+        <span>Vous avez un compte ?</span><a href="Connexion.dc.html" style="font-weight: 700">Se connecter</a>
+      </div>
+
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px">
+        <legend class="step"><span class="num">1</span>Vos coordonnées</legend>
+        <label class="f">Nom et prénom<input value="Aya Kouassi" autocomplete="name"></label>
+        <label class="f">Téléphone<div style="display: flex"><span style="height: 48px; display: flex; align-items: center; padding: 0 12px; border: 1px solid #CFC8BE; border-right: 0; background: #F1EEE9; font-weight: 600; font-size: 15px">+225</span><input value="07 08 12 34 56" inputmode="tel" autocomplete="tel" style="flex: 1; min-width: 0"></div><span class="hint">10 chiffres. Nous vous appelons pour confirmer la commande.</span></label>
+        <label class="f">E-mail <span class="hint" style="display: inline">(facultatif — pour recevoir le suivi)</span><input value="" type="email" autocomplete="email" placeholder="vous@exemple.com"></label>
+      </fieldset>
+
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px">
+        <legend class="step"><span class="num">2</span>Livraison</legend>
+        <label class="f">Commune
+          <select onChange="{{pickCommune}}">
+            <sc-for list="{{communes}}" as="c" hint-placeholder-count="5"><option value="{{c.id}}" selected="{{c.on}}">{{c.label}}</option></sc-for>
+          </select>
+          <span class="hint">{{delay}}</span>
+        </label>
+        <label class="f">Adresse<input value="Riviera 3, rue des Jardins, villa 12"></label>
+        <label class="f">Repères pour le livreur<textarea>Portail vert en face de la pharmacie.</textarea></label>
+      </fieldset>
+
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+        <legend class="step"><span class="num">3</span>Paiement</legend>
+        <label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 2px solid #1A1613; background: #fff; cursor: pointer">
+          <input type="radio" name="pay" checked="{{true}}" style="width: 20px; height: 20px; margin: 2px 0 0; accent-color: #1A1613">
+          <span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">Espèces à la livraison</strong><span style="font-size: 13px; color: #6B635B; line-height: 1.45">Préparez le montant exact si possible. Le livreur vous remet votre colis contre paiement.</span></span>
+        </label>
+      </fieldset>
+
+      <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #F1EEE9; font-size: 14px">
+        <h2 class="serif" style="margin: 0 0 4px; font-size: 20px">Récapitulatif</h2>
+        <div style="display: flex; justify-content: space-between"><span>Ambre Lagune · 50 ml × 1</span><span>38 000 FCFA</span></div>
+        <div style="display: flex; justify-content: space-between"><span>Néroli d'Assinie · 30 ml × 1</span><span>22 000 FCFA</span></div>
+        <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #DCD5CB"><span>Sous-total</span><span>60 000 FCFA</span></div>
+        <div style="display: flex; justify-content: space-between"><span>Livraison · {{communeName}}</span><span>{{fee}}</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 10px; border-top: 1px solid #DCD5CB"><strong>À payer à la livraison</strong><strong style="font-size: 22px">{{total}}</strong></div>
+      </section>
+
+      <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.45; cursor: pointer">
+        <input type="checkbox" checked="{{cgv}}" onChange="{{toggleCgv}}" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #1A1613">
+        <span>J'accepte les <a href="#">conditions générales de vente</a> et la <a href="#">politique de confidentialité</a>.</span>
+      </label>
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button type="button" onClick="{{submit}}" disabled="{{blocked}}" style="height: 56px; border: 0; background: {{btnBg}}; color: {{btnFg}}; font: 600 15px 'Manrope', sans-serif; cursor: pointer">Valider la commande · {{total}}</button>
+        <sc-if value="{{blocked}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; color: #6B635B; text-align: center">Cochez les conditions générales pour valider.</span></sc-if>
+      </div>
+    </form>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1840}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { commune: 'cocody', cgv: false, done: false };
+  }
+  renderVals() {
+    const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+    const list = [
+      { id: 'cocody', name: 'Cocody', fee: 1500, delay: 'Livraison sous 24 h' },
+      { id: 'plateau', name: 'Plateau', fee: 1500, delay: 'Livraison sous 24 h' },
+      { id: 'marcory', name: 'Marcory', fee: 2000, delay: 'Livraison sous 24 h' },
+      { id: 'yopougon', name: 'Yopougon', fee: 2500, delay: 'Livraison sous 48 h' },
+      { id: 'bingerville', name: 'Bingerville', fee: 3000, delay: 'Livraison sous 48 h' }
+    ];
+    const cur = list.find((c) => c.id === this.state.commune) || list[0];
+    const blocked = !this.state.cgv;
+    return {
+      communes: list.map((c) => ({ id: c.id, label: c.name + ' — ' + fmt(c.fee), on: c.id === cur.id })),
+      pickCommune: (e) => this.setState({ commune: e.target.value }),
+      communeName: cur.name,
+      delay: cur.delay + ' (indicatif)',
+      fee: fmt(cur.fee),
+      total: fmt(60000 + cur.fee),
+      cgv: this.state.cgv,
+      toggleCgv: () => this.setState({ cgv: !this.state.cgv }),
+      blocked,
+      btnBg: blocked ? '#CFC8BE' : '#1A1613',
+      btnFg: blocked ? '#4A4038' : '#FAFAF8',
+      submit: () => { if (!blocked) this.setState({ done: true }); },
+      done: this.state.done,
+      editing: !this.state.done
+    };
+  }
+}
+</script>
+</body>
+</html>

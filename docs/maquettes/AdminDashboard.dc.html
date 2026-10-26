@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin — tableau de bord</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F4F2EE}
+a{color:#1A1613}a:hover{color:#9A5B13}
+.serif{font-family:'Bodoni Moda',serif;font-weight:500}
+.nav a{display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 12px;border-radius:4px;color:#D9D3CA;text-decoration:none;font-size:14px}
+.nav a:hover{background:#2A241F;color:#FAFAF8}
+.card{background:#fff;border:1px solid #E2DDD5;border-radius:6px}
+.lbl{font:600 11px 'Manrope',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B635B}
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font:600 12px 'Manrope',sans-serif;color:#6B635B;padding:10px 16px;border-bottom:1px solid #E2DDD5;white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid #EFEBE5;font-size:14px;white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 1300px; display: flex; flex-wrap: wrap; background: #F4F2EE; color: #1A1613; font-family: 'Manrope', sans-serif">
+  <aside style="flex: 1 1 232px; max-width: 100%; background: #1A1613; padding: 22px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+    <div style="padding: 0 12px"><div class="serif" style="font-size: 15px; letter-spacing: .22em; color: #FAFAF8">PROJET PARFUMS</div><div style="font-size: 12px; color: #A39B91; margin-top: 4px">Administration</div></div>
+    <nav class="nav" aria-label="Administration" style="display: flex; flex-direction: column; gap: 2px">
+      <a href="AdminDashboard.dc.html" aria-current="page" style="background: #FAFAF8; color: #1A1613; font-weight: 700">Tableau de bord</a>
+      <a href="AdminCommandes.dc.html">Commandes<span style="background: #9A5B13; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 9px">7</span></a>
+      <a href="AdminProduits.dc.html">Produits</a>
+      <a href="#">Stock<span style="background: #5A514A; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 9px">4</span></a>
+      <a href="#">Encaissements</a>
+      <a href="#">Clients</a>
+      <a href="#">Messages</a>
+      <div style="height: 1px; background: #3A322C; margin: 10px 12px"></div>
+      <a href="#">Communes et livraison</a>
+      <a href="#">Collaborateurs</a>
+      <a href="#">Journal d'audit</a>
+    </nav>
+    <div style="margin-top: auto; padding: 12px; border-top: 1px solid #3A322C; font-size: 13px; color: #D9D3CA">A. Koné<br><span style="color: #A39B91">Propriétaire</span></div>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 12px"><h1 class="serif" style="margin: 0; font-size: 30px">Tableau de bord</h1><span class="pill" style="background: #ECE9E4; color: #4A4038">Données d'exemple</span></div>
+      <div role="group" aria-label="Période" style="display: flex; border: 1px solid #CFC8BE; border-radius: 4px; overflow: hidden; background: #fff">
+        <button aria-pressed="false" style="height: 38px; padding: 0 14px; border: 0; background: none; font: 600 13px 'Manrope', sans-serif; color: #1A1613; cursor: pointer">Aujourd'hui</button>
+        <button aria-pressed="true" style="height: 38px; padding: 0 14px; border: 0; background: #1A1613; font: 600 13px 'Manrope', sans-serif; color: #FAFAF8; cursor: pointer">7 jours</button>
+        <button aria-pressed="false" style="height: 38px; padding: 0 14px; border: 0; background: none; font: 600 13px 'Manrope', sans-serif; color: #1A1613; cursor: pointer">30 jours</button>
+        <button aria-pressed="false" style="height: 38px; padding: 0 14px; border: 0; border-left: 1px solid #CFC8BE; background: none; font: 600 13px 'Manrope', sans-serif; color: #1A1613; cursor: pointer">20 – 26 oct.</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+        <div class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+          <span class="lbl">{{k.label}}</span>
+          <span style="font-size: 26px; font-weight: 700; letter-spacing: -.01em">{{k.value}}</span>
+          <span style="font-size: 12px; color: {{k.deltaColor}}; font-weight: 600">{{k.delta}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="card" style="padding: 18px 20px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px"><h2 style="margin: 0; font-size: 16px">Chiffre d'affaires encaissé par jour</h2><span style="font-size: 12px; color: #6B635B">Commandes livrées, hors frais de livraison</span></div>
+      <div role="img" aria-label="Chiffre d'affaires encaissé du 20 au 26 octobre, de 121 000 à 255 000 FCFA par jour, total 1 284 500 FCFA" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; align-items: end; height: 220px; border-bottom: 1px solid #CFC8BE">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="7">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%">
+            <span style="font-size: 11px; color: #4A4038; font-weight: 600">{{b.short}}</span>
+            <div style="width: 100%; max-width: 56px; height: {{b.h}}; background: {{b.color}}; border-radius: 3px 3px 0 0"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; padding-top: 8px">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="7"><span style="text-align: center; font-size: 12px; color: #6B635B">{{b.day}}</span></sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 16px">
+      <section class="card" style="overflow: hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px"><h2 style="margin: 0; font-size: 16px">Commandes à traiter</h2><a href="AdminCommandes.dc.html" style="font-size: 13px; font-weight: 600">Tout voir</a></div>
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>N°</th><th>Client</th><th>Commune</th><th style="text-align: right">Total</th><th>Statut</th><th>Depuis</th></tr></thead>
+            <tbody>
+              <sc-for list="{{todo}}" as="o" hint-placeholder-count="5">
+                <tr><td><a href="AdminCommandes.dc.html" style="font-weight: 700">{{o.n}}</a></td><td>{{o.client}}</td><td>{{o.commune}}</td><td style="text-align: right">{{o.total}}</td><td><span class="pill" style="background: {{o.bg}}; color: {{o.fg}}">{{o.status}}</span></td><td style="color: #6B635B">{{o.age}}</td></tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" style="overflow: hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px"><h2 style="margin: 0; font-size: 16px">Stocks faibles et ruptures</h2><a href="#" style="font-size: 13px; font-weight: 600">Gérer le stock</a></div>
+        <table>
+          <thead><tr><th>Variante</th><th style="text-align: right">Disponible</th><th style="text-align: right">Seuil</th><th></th></tr></thead>
+          <tbody>
+            <sc-for list="{{low}}" as="l" hint-placeholder-count="4">
+              <tr><td>{{l.name}}</td><td style="text-align: right; font-weight: 700; color: {{l.color}}">{{l.avail}}</td><td style="text-align: right; color: #6B635B">{{l.threshold}}</td><td style="text-align: right"><a href="#" style="font-size: 13px; font-weight: 600">Réapprovisionner</a></td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="padding: 14px 16px 18px">
+        <h2 style="margin: 0 0 14px; font-size: 16px">Meilleures ventes</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <sc-for list="{{best}}" as="b" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr) 70px; gap: 12px; align-items: center; font-size: 14px">
+              <span>{{b.name}}</span>
+              <div style="height: 10px; background: #EFEBE5; border-radius: 5px"><div style="height: 10px; width: {{b.w}}; background: #1A1613; border-radius: 5px"></div></div>
+              <span style="text-align: right; font-weight: 700">{{b.units}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section class="card" style="padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 16px">Espèces à remettre en caisse</h2><span style="font-size: 12px; color: #6B635B">Commandes livrées, non remises</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEBE5"><div><strong>Koffi B.</strong><div style="font-size: 13px; color: #6B635B">3 commandes livrées</div></div><div style="display: flex; align-items: center; gap: 14px"><strong>141 500 FCFA</strong><button style="height: 36px; padding: 0 12px; border: 1px solid #1A1613; background: #fff; font: 600 13px 'Manrope', sans-serif; color: #1A1613; cursor: pointer; border-radius: 4px">Enregistrer la remise</button></div></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEBE5"><div><strong>Yao S.</strong><div style="font-size: 13px; color: #6B635B">2 commandes livrées</div></div><div style="display: flex; align-items: center; gap: 14px"><strong>77 000 FCFA</strong><button style="height: 36px; padding: 0 12px; border: 1px solid #1A1613; background: #fff; font: 600 13px 'Manrope', sans-serif; color: #1A1613; cursor: pointer; border-radius: 4px">Enregistrer la remise</button></div></div>
+        <div style="display: flex; gap: 10px; padding: 10px 12px; background: #F6E9E6; color: #7A2C1F; font-size: 13px; border-radius: 4px">Écart non résolu : remise du 24 oct. de Yao S., −2 000 FCFA.</div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+    const days = [['Lun. 20', 142000], ['Mar. 21', 198500], ['Mer. 22', 121000], ['Jeu. 23', 236000], ['Ven. 24', 187500], ['Sam. 25', 255000], ['Dim. 26', 144500]];
+    const max = 255000;
+    const status = {
+      todo: { bg: '#1A1613', fg: '#FAFAF8' },
+      confirmed: { bg: '#E3E9F2', fg: '#27466E' },
+      prep: { bg: '#ECE9E4', fg: '#4A4038' },
+      failed: { bg: '#F6E9E6', fg: '#7A2C1F' }
+    };
+    return {
+      kpis: [
+        { label: "Chiffre d'affaires encaissé", value: '1 284 500 FCFA', delta: '+12 % vs 7 jours précédents', deltaColor: '#2F6B4F' },
+        { label: 'Commandes', value: '31', delta: '+4 vs 7 jours précédents', deltaColor: '#2F6B4F' },
+        { label: 'Panier moyen', value: '49 400 FCFA', delta: '−3 % vs 7 jours précédents', deltaColor: '#7A2C1F' },
+        { label: 'À traiter', value: '7', delta: '4 à confirmer · 3 à préparer', deltaColor: '#6B635B' },
+        { label: 'Livraisons réussies', value: '93 %', delta: '26 livrées · 2 échecs', deltaColor: '#6B635B' }
+      ],
+      bars: days.map(([day, v]) => ({ day, short: Math.round(v / 1000) + ' k', h: Math.round((v / max) * 180) + 'px', color: v === max ? '#9A5B13' : '#1A1613' })),
+      todo: [
+        { n: 'PP-10241', client: 'Fatou D.', commune: 'Yopougon', total: fmt(47500), status: 'À confirmer', age: '25 min', ...status.todo },
+        { n: 'PP-10240', client: 'Marc Y.', commune: 'Cocody', total: fmt(39500), status: 'À confirmer · 1 appel', age: '1 h', ...status.todo },
+        { n: 'PP-10239', client: 'Awa T.', commune: 'Marcory', total: fmt(78000), status: 'Confirmée', age: '2 h', ...status.confirmed },
+        { n: 'PP-10238', client: 'Ibrahim K.', commune: 'Plateau', total: fmt(25500), status: 'En préparation', age: '3 h', ...status.prep },
+        { n: 'PP-10236', client: 'Esther N.', commune: 'Bingerville', total: fmt(58000), status: 'Échec · injoignable', age: 'hier', ...status.failed }
+      ],
+      low: [
+        { name: 'Tubéreuse Nuit · 50 ml', avail: 'Rupture', threshold: '5', color: '#7A2C1F' },
+        { name: 'Iris Poudré · 100 ml', avail: '3', threshold: '5', color: '#9A5B13' },
+        { name: 'Ambre Lagune · 100 ml', avail: '3', threshold: '5', color: '#9A5B13' },
+        { name: 'Oud Cocody · 30 ml', avail: '4', threshold: '5', color: '#9A5B13' }
+      ],
+      best: [['Ambre Lagune', 14], ['Oud Cocody', 9], ["Néroli d'Assinie", 8], ['Fleur de Bassam', 6], ['Vétiver Plateau', 5]].map(([name, u]) => ({ name, units: u + ' unités', w: Math.round((u / 14) * 100) + '%' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

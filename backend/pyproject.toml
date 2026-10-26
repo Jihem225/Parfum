@@ -1,0 +1,38 @@
+[project]
+name = "parfums-backend"
+version = "0.1.0"
+description = "API REST de la boutique « Projet Parfums »"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi[standard]==0.143.0",
+    "pydantic-settings==2.15.0",
+    "sqlalchemy==2.1.4",
+    "alembic==1.20.0",
+    "psycopg[binary]==3.3.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "httpx==0.28.1",
+    "ruff==0.17.0",
+    "mypy==2.4.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101"]
+
+[tool.mypy]
+strict = true
+files = ["app", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

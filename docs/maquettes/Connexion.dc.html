@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Connexion et inscription</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#FAFAF8}
+a{color:#1A1613}a:hover{color:#9A5B13}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:#1A1613;padding:0;cursor:pointer;position:relative;text-decoration:none}
+.serif{font-family:'Bodoni Moda',serif;font-weight:500}
+.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.f input{height:48px;border:1px solid #CFC8BE;background:#fff;padding:0 12px;font:400 15px 'Manrope',sans-serif;color:#1A1613;border-radius:0}
+.hint{font-weight:400;font-size:12px;color:#6B635B}
+</style>
+</helmet>
+<div style="width: 390px; height: 960px; background: #FAFAF8; color: #1A1613; font-family: 'Manrope', sans-serif; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 6px; border-bottom: 1px solid #E2DDD5">
+    <a href="Main.dc.html" class="ib" aria-label="Retour"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+    <a href="Main.dc.html" class="serif" style="font-size: 16px; letter-spacing: .24em; text-decoration: none; color: #1A1613">PROJET PARFUMS</a>
+    <span style="width: 44px"></span>
+  </header>
+
+  <div style="padding: 32px 20px 0; display: flex; flex-direction: column; gap: 24px">
+    <h1 class="serif" style="margin: 0; font-size: 32px">{{title}}</h1>
+    <div role="tablist" aria-label="Connexion ou inscription" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid #E2DDD5">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="height: 48px; border: 0; border-bottom: 2px solid {{t.line}}; margin-bottom: -1px; background: none; font: 600 15px 'Manrope', sans-serif; color: {{t.fg}}; cursor: pointer">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isLogin}}" hint-placeholder-val="{{true}}">
+      <form style="display: flex; flex-direction: column; gap: 16px">
+        <label class="f">E-mail<input type="email" value="aya.kouassi@exemple.com" autocomplete="email"></label>
+        <label class="f">Mot de passe<input type="password" value="motdepasse12" autocomplete="current-password"></label>
+        <a href="#" style="align-self: flex-end; font-size: 13px; font-weight: 600">Mot de passe oublié ?</a>
+        <a href="Compte.dc.html" style="display: flex; align-items: center; justify-content: center; height: 52px; background: #1A1613; color: #FAFAF8; text-decoration: none; font-size: 15px; font-weight: 600">Se connecter</a>
+        <div role="alert" style="display: flex; gap: 10px; padding: 12px 14px; background: #F6E9E6; color: #7A2C1F; font-size: 13px; line-height: 1.45">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+          <span>Exemple d'état d'erreur : « E-mail ou mot de passe incorrect. Après 5 essais, patientez 15 minutes. »</span>
+        </div>
+      </form>
+    </sc-if>
+
+    <sc-if value="{{isSignup}}" hint-placeholder-val="{{false}}">
+      <form style="display: flex; flex-direction: column; gap: 16px">
+        <label class="f">Nom et prénom<input value="" autocomplete="name"></label>
+        <label class="f">Téléphone<div style="display: flex"><span style="height: 48px; display: flex; align-items: center; padding: 0 12px; border: 1px solid #CFC8BE; border-right: 0; background: #F1EEE9; font-weight: 600; font-size: 15px">+225</span><input inputmode="tel" autocomplete="tel" style="flex: 1; min-width: 0"></div></label>
+        <label class="f">E-mail<input type="email" autocomplete="email"></label>
+        <label class="f">Mot de passe<input type="password" autocomplete="new-password"><span class="hint">10 caractères minimum.</span></label>
+        <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.45"><input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #1A1613"><span>J'accepte les <a href="#">conditions générales</a> et la <a href="#">politique de confidentialité</a>.</span></label>
+        <a href="Compte.dc.html" style="display: flex; align-items: center; justify-content: center; height: 52px; background: #1A1613; color: #FAFAF8; text-decoration: none; font-size: 15px; font-weight: 600">Créer mon compte</a>
+      </form>
+    </sc-if>
+
+    <div style="display: flex; align-items: center; gap: 12px; color: #6B635B; font-size: 13px"><span style="flex: 1; height: 1px; background: #E2DDD5"></span>ou<span style="flex: 1; height: 1px; background: #E2DDD5"></span></div>
+    <a href="Commande.dc.html" style="display: flex; align-items: center; justify-content: center; height: 52px; border: 1px solid #1A1613; text-decoration: none; font-size: 15px; font-weight: 600">Commander sans compte</a>
+    <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #6B635B; text-align: center">Un compte vous permet de retrouver vos adresses et de suivre toutes vos commandes.</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'login' };
+  }
+  renderVals() {
+    const tab = this.state.tab;
+    return {
+      title: tab === 'login' ? 'Bon retour parmi nous' : 'Créer un compte',
+      isLogin: tab === 'login',
+      isSignup: tab === 'signup',
+      tabs: [['login', 'Connexion'], ['signup', 'Inscription']].map(([id, label]) => ({
+        label, on: tab === id, line: tab === id ? '#1A1613' : 'transparent', fg: tab === id ? '#1A1613' : '#6B635B',
+        pick: () => this.setState({ tab: id })
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

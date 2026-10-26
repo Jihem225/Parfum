@@ -1,0 +1,16 @@
+# Facultatif : PostgreSQL 17 via Docker, pour qui préfère Docker à Homebrew.
+# Avec ce conteneur, utiliser DATABASE_URL=postgresql+psycopg://parfums:parfums@localhost:5432/parfums
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: parfums
+      POSTGRES_PASSWORD: parfums
+      POSTGRES_DB: parfums
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

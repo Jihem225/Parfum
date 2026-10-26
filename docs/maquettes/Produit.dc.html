@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche produit — Ambre Lagune</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#FAFAF8}
+a{color:#1A1613}a:hover{color:#9A5B13}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:#1A1613;padding:0;cursor:pointer;position:relative;text-decoration:none}
+.serif{font-family:'Bodoni Moda',serif;font-weight:500}
+.lbl{font:600 11px 'Manrope',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#6B635B}
+</style>
+</helmet>
+<div style="width: 390px; height: 1820px; background: #FAFAF8; color: #1A1613; font-family: 'Manrope', sans-serif; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 6px; border-bottom: 1px solid #E2DDD5">
+    <a href="Catalogue.dc.html" class="ib" aria-label="Retour au catalogue"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+    <a href="Main.dc.html" class="serif" style="font-size: 16px; letter-spacing: .24em; text-decoration: none; color: #1A1613">PROJET PARFUMS</a>
+    <a href="Panier.dc.html" class="ib" aria-label="Panier, 2 articles"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg><span style="position: absolute; top: 7px; right: 6px; min-width: 16px; height: 16px; border-radius: 8px; background: #9A5B13; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span></a>
+  </header>
+
+  <div style="height: 420px; background: #EBDCC4; display: flex; align-items: center; justify-content: center; position: relative">
+    <svg viewBox="0 0 120 200" width="168" height="280" aria-hidden="true"><rect x="44" y="6" width="32" height="38" rx="2" fill="#1A1613"></rect><rect x="50" y="44" width="20" height="10" fill="#B9B1A6"></rect><rect x="18" y="54" width="84" height="136" rx="12" fill="#C48A45"></rect><rect x="18" y="54" width="84" height="136" rx="12" fill="none" stroke="#1A1613" stroke-opacity=".18"></rect><rect x="28" y="66" width="7" height="110" rx="3.5" fill="#FFFFFF" fill-opacity=".35"></rect><rect x="38" y="112" width="44" height="34" fill="#FAFAF8" fill-opacity=".92"></rect><rect x="46" y="122" width="28" height="2" fill="#1A1613"></rect><rect x="50" y="130" width="20" height="1.5" fill="#6B635B"></rect></svg>
+    <span style="position: absolute; bottom: 14px; right: 14px; background: rgba(250,250,248,.9); font-size: 12px; font-weight: 600; padding: 4px 9px">1 / 4</span>
+  </div>
+  <div style="display: flex; gap: 8px; padding: 10px 16px 0">
+    <button aria-label="Image 1" style="width: 56px; height: 56px; background: #EBDCC4; border: 2px solid #1A1613; cursor: pointer"></button>
+    <button aria-label="Image 2" style="width: 56px; height: 56px; background: #E3D1B4; border: 1px solid #E2DDD5; cursor: pointer"></button>
+    <button aria-label="Image 3" style="width: 56px; height: 56px; background: #F1E7D6; border: 1px solid #E2DDD5; cursor: pointer"></button>
+    <button aria-label="Image 4" style="width: 56px; height: 56px; background: #D9C6A6; border: 1px solid #E2DDD5; cursor: pointer"></button>
+  </div>
+
+  <div style="padding: 22px 16px 0; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span class="lbl">Collection Signatures</span>
+      <h1 class="serif" style="margin: 0; font-size: 34px; line-height: 1.1">Ambre Lagune</h1>
+      <span style="font-size: 14px; color: #6B635B">Eau de parfum · Ambré · Mixte</span>
+    </div>
+    <div style="font-size: 24px; font-weight: 700; letter-spacing: -.01em">{{price}}</div>
+
+    <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+      <legend class="lbl" style="margin-bottom: 10px">Contenance</legend>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{volumes}}" as="v" hint-placeholder-count="3">
+          <button onClick="{{v.pick}}" aria-pressed="{{v.on}}" style="height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1px solid {{v.border}}; background: {{v.bg}}; color: {{v.fg}}; font-family: 'Manrope', sans-serif; cursor: pointer">
+            <span style="font-size: 15px; font-weight: 700">{{v.label}}</span>
+            <span style="font-size: 12px">{{v.price}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: {{stockColor}}"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{stockColor}}"></span>{{stock}}</div>
+    </fieldset>
+
+    <div style="display: flex; gap: 10px">
+      <div style="display: flex; align-items: center; border: 1px solid #CFC8BE; height: 52px">
+        <button onClick="{{dec}}" aria-label="Retirer un" style="width: 44px; height: 50px; border: 0; background: none; font-size: 20px; color: #1A1613; cursor: pointer">−</button>
+        <span aria-live="polite" style="width: 28px; text-align: center; font-weight: 700">{{qty}}</span>
+        <button onClick="{{inc}}" aria-label="Ajouter un" style="width: 44px; height: 50px; border: 0; background: none; font-size: 20px; color: #1A1613; cursor: pointer">+</button>
+      </div>
+      <a href="Panier.dc.html" style="flex: 1; display: flex; align-items: center; justify-content: center; height: 52px; background: #1A1613; color: #FAFAF8; text-decoration: none; font-size: 15px; font-weight: 600">Ajouter au panier</a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #F1EEE9; font-size: 13px; line-height: 1.45">
+      <div style="display: flex; gap: 10px; align-items: flex-start"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#9A5B13" stroke-width="1.5" aria-hidden="true" style="flex: none"><rect x="3" y="6" width="18" height="12" rx="1"></rect><circle cx="12" cy="12" r="2.5"></circle></svg><span>Vous payez <strong>en espèces à la livraison</strong>, après avoir reçu votre colis.</span></div>
+      <div style="display: flex; gap: 10px; align-items: flex-start"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#9A5B13" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M3 6h11v10H3z"></path><path d="M14 10h4l3 3v3h-7z"></path><circle cx="7" cy="17.5" r="1.5"></circle><circle cx="17" cy="17.5" r="1.5"></circle></svg><span>Livraison à Abidjan en 24 à 48 h, dès 1 500 FCFA selon la commune.</span></div>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding-top: 6px">
+      <h2 class="serif" style="margin: 0; font-size: 22px">Pyramide olfactive</h2>
+      <div style="display: flex; flex-direction: column; border-top: 1px solid #E2DDD5">
+        <div style="display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #E2DDD5"><span class="lbl" style="width: 64px; flex: none; padding-top: 2px">Tête</span><span style="font-size: 15px">Bergamote, mandarine verte</span></div>
+        <div style="display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #E2DDD5"><span class="lbl" style="width: 64px; flex: none; padding-top: 2px">Cœur</span><span style="font-size: 15px">Fleur d'oranger, labdanum</span></div>
+        <div style="display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #E2DDD5"><span class="lbl" style="width: 64px; flex: none; padding-top: 2px">Fond</span><span style="font-size: 15px">Ambre, vanille, bois de santal</span></div>
+      </div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #3D342D">[Description du parfum à rédiger] Un ambre chaud et lumineux, pensé pour tenir toute la journée.</p>
+    </section>
+
+    <div style="display: flex; flex-direction: column; border-top: 1px solid #E2DDD5">
+      <button style="display: flex; align-items: center; justify-content: space-between; height: 56px; border: 0; border-bottom: 1px solid #E2DDD5; background: none; font: 600 15px 'Manrope', sans-serif; color: #1A1613; padding: 0; cursor: pointer" aria-expanded="false">Livraison et retours<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+      <button style="display: flex; align-items: center; justify-content: space-between; height: 56px; border: 0; border-bottom: 1px solid #E2DDD5; background: none; font: 600 15px 'Manrope', sans-serif; color: #1A1613; padding: 0; cursor: pointer" aria-expanded="false">Conseils d'application<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+    </div>
+
+    <section style="padding: 10px 0 32px">
+      <h2 class="serif" style="margin: 0 0 14px; font-size: 22px">Vous aimerez aussi</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <a href="Produit.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1A1613">
+          <div style="height: 170px; background: #DED2C7; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 120 200" width="70" height="116" aria-hidden="true"><rect x="44" y="6" width="32" height="38" rx="2" fill="#1A1613"></rect><rect x="50" y="44" width="20" height="10" fill="#B9B1A6"></rect><rect x="18" y="54" width="84" height="136" rx="12" fill="#6E4A35"></rect><rect x="28" y="66" width="7" height="110" rx="3.5" fill="#FFFFFF" fill-opacity=".3"></rect><rect x="38" y="112" width="44" height="34" fill="#FAFAF8" fill-opacity=".92"></rect></svg></div>
+          <span class="serif" style="font-size: 16px">Oud Cocody</span><span style="font-size: 13px; font-weight: 600">dès 30 000 FCFA</span>
+        </a>
+        <a href="Produit.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #1A1613">
+          <div style="height: 170px; background: #EEE6CB; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 120 200" width="70" height="116" aria-hidden="true"><rect x="44" y="6" width="32" height="38" rx="2" fill="#1A1613"></rect><rect x="50" y="44" width="20" height="10" fill="#B9B1A6"></rect><rect x="18" y="54" width="84" height="136" rx="12" fill="#D9B54A"></rect><rect x="28" y="66" width="7" height="110" rx="3.5" fill="#FFFFFF" fill-opacity=".35"></rect><rect x="38" y="112" width="44" height="34" fill="#FAFAF8" fill-opacity=".92"></rect></svg></div>
+          <span class="serif" style="font-size: 16px">Néroli d'Assinie</span><span style="font-size: 13px; font-weight: 600">dès 22 000 FCFA</span>
+        </a>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { vol: '50 ml', qty: 1 };
+  }
+  renderVals() {
+    const data = {
+      '30 ml': { price: '25 000 FCFA', stock: 'En stock', color: '#2F6B4F', max: 5 },
+      '50 ml': { price: '38 000 FCFA', stock: 'En stock', color: '#2F6B4F', max: 5 },
+      '100 ml': { price: '55 000 FCFA', stock: 'Plus que 3 en stock', color: '#9A5B13', max: 3 }
+    };
+    const cur = data[this.state.vol];
+    const on = { bg: '#1A1613', fg: '#FAFAF8', border: '#1A1613' };
+    const off = { bg: '#FFFFFF', fg: '#1A1613', border: '#CFC8BE' };
+    return {
+      price: cur.price,
+      stock: cur.stock,
+      stockColor: cur.color,
+      qty: this.state.qty,
+      volumes: Object.keys(data).map((v) => ({ label: v, price: data[v].price, on: v === this.state.vol, ...(v === this.state.vol ? on : off), pick: () => this.setState({ vol: v, qty: 1 }) })),
+      dec: () => this.setState({ qty: Math.max(1, this.state.qty - 1) }),
+      inc: () => this.setState({ qty: Math.min(cur.max, this.state.qty + 1) })
+    };
+  }
+}
+</script>
+</body>
+</html>

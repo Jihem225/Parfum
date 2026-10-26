@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Catalogue — filtres</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#FAFAF8}
+a{color:#1A1613}a:hover{color:#9A5B13}
+.serif{font-family:'Bodoni Moda',serif;font-weight:500}
+.lbl{font:600 11px 'Manrope',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#6B635B;margin:0 0 10px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #8C857E; color: #1A1613; font-family: 'Manrope', sans-serif; position: relative; overflow: hidden">
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 780px; background: #FAFAF8; border-radius: 14px 14px 0 0; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 20px; border-bottom: 1px solid #E2DDD5">
+      <h1 class="serif" style="margin: 0; font-size: 24px">Filtres</h1>
+      <a href="Catalogue.dc.html" aria-label="Fermer les filtres" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1A1613"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+    </div>
+    <div style="flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 26px">
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lbl">Genre</legend>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #1A1613">
+          <sc-for list="{{genders}}" as="g" hint-placeholder-count="3">
+            <button onClick="{{g.pick}}" aria-pressed="{{g.on}}" style="height: 44px; border: 0; background: {{g.bg}}; color: {{g.fg}}; font: 600 14px 'Manrope', sans-serif; cursor: pointer">{{g.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lbl">Famille olfactive</legend>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px">
+          <sc-for list="{{families}}" as="f" hint-placeholder-count="6">
+            <label style="display: flex; align-items: center; gap: 10px; height: 44px; font-size: 15px; cursor: pointer"><input type="checkbox" checked="{{f.on}}" onChange="{{f.toggle}}" style="width: 20px; height: 20px; accent-color: #1A1613">{{f.label}}</label>
+          </sc-for>
+        </div>
+      </fieldset>
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lbl">Prix (FCFA)</legend>
+        <div style="display: flex; gap: 12px; align-items: center">
+          <label style="flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #6B635B">Minimum<input inputmode="numeric" value="20 000" style="height: 44px; border: 1px solid #CFC8BE; padding: 0 12px; font: 15px 'Manrope', sans-serif; color: #1A1613; background: #fff"></label>
+          <span aria-hidden="true" style="padding-top: 18px">—</span>
+          <label style="flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #6B635B">Maximum<input inputmode="numeric" value="60 000" style="height: 44px; border: 1px solid #CFC8BE; padding: 0 12px; font: 15px 'Manrope', sans-serif; color: #1A1613; background: #fff"></label>
+        </div>
+      </fieldset>
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lbl">Contenance</legend>
+        <div style="display: flex; gap: 8px">
+          <sc-for list="{{volumes}}" as="v" hint-placeholder-count="3">
+            <button onClick="{{v.toggle}}" aria-pressed="{{v.on}}" style="height: 44px; min-width: 76px; padding: 0 14px; border: 1px solid {{v.border}}; background: {{v.bg}}; color: {{v.fg}}; font: 600 14px 'Manrope', sans-serif; cursor: pointer">{{v.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+      <label style="display: flex; align-items: center; justify-content: space-between; height: 48px; font-size: 15px; border-top: 1px solid #E2DDD5; padding-top: 8px">Disponible uniquement<input type="checkbox" checked="{{inStock}}" onChange="{{toggleStock}}" style="width: 22px; height: 22px; accent-color: #1A1613"></label>
+    </div>
+    <div style="display: flex; gap: 10px; padding: 14px 20px 22px; border-top: 1px solid #E2DDD5">
+      <button onClick="{{reset}}" style="flex: 1; height: 52px; background: none; border: 1px solid #1A1613; font: 600 14px 'Manrope', sans-serif; color: #1A1613; cursor: pointer">Effacer</button>
+      <a href="Catalogue.dc.html" style="flex: 2; display: flex; align-items: center; justify-content: center; height: 52px; background: #1A1613; color: #FAFAF8; text-decoration: none; font-size: 15px; font-weight: 600">Voir 6 parfums</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { gender: 'Femme', fams: { Floral: true }, vols: { '50 ml': true }, inStock: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const on = { bg: '#1A1613', fg: '#FAFAF8', border: '#1A1613' };
+    const off = { bg: '#FAFAF8', fg: '#1A1613', border: '#CFC8BE' };
+    return {
+      genders: ['Femme', 'Homme', 'Mixte'].map((g) => ({ label: g, on: s.gender === g, ...(s.gender === g ? on : off), pick: () => this.setState({ gender: g }) })),
+      families: ['Ambré', 'Boisé', 'Floral', 'Hespéridé', 'Musqué', 'Épicé'].map((f) => ({ label: f, on: !!s.fams[f], toggle: () => this.setState({ fams: { ...s.fams, [f]: !s.fams[f] } }) })),
+      volumes: ['30 ml', '50 ml', '100 ml'].map((v) => ({ label: v, on: !!s.vols[v], ...(s.vols[v] ? on : off), toggle: () => this.setState({ vols: { ...s.vols, [v]: !s.vols[v] } }) })),
+      inStock: s.inStock,
+      toggleStock: () => this.setState({ inStock: !s.inStock }),
+      reset: () => this.setState({ gender: '', fams: {}, vols: {}, inStock: false })
+    };
+  }
+}
+</script>
+</body>
+</html>
