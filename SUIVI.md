@@ -179,6 +179,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 12 : backend `pytest`, `ruff`, `mypy` ; migration 0004 (`upgrade`, `alembic check`, `downgrade 0003`, `upgrade`) | 164/164 (8 nouveaux ; contrôle par mutation : nouveaux essais désactivés → 1 échec) ; OK ; OK ; OK |
 | 2026-10-26 | 12 : frontend lint / typecheck / Vitest / build | OK / OK / 12/12 / OK |
 | 2026-10-26 | 12 : E2E local, base neuve, `CI=1` | 24/24, 0 relance ; 18 e-mails mis en file, tous envoyés au 1er essai par la tâche de fond (console). Premier essai rouge : page E-mails sans rafraîchissement (parcours de 3 s < cycle de 5 s), corrigé par un rafraîchissement automatique |
+| 2026-10-26 | CI GitHub run 40392680792 (commit 5eea38d : étapes 11.2 à 12) | backend 164/164, frontend 12/12, **E2E 24/24** : verts |
 | — | E2E Playwright (ancien poste macOS 13) | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
 
 ## Étape 8 — matrice des parcours
@@ -221,8 +222,8 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-Envoi des commits 11.2, 11.3, correctif RG et étape 12 sur GitHub, puis vérification de la CI (nécessite `gh auth login` + `gh auth setup-git` sur le nouveau poste : le jeton du trousseau n'a pas le droit `workflow`). Ensuite : choix du prestataire de mobile money (docs/09 §9) et mise en ligne. Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+Étapes 11 et 12 poussées (CI verte, run 40392680792). Prochaine étape : choix du prestataire de mobile money (docs/09 §9) et mise en ligne. Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
 À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.
-Nouveau poste (2026-10-26) : macOS 26.1, Node 25, Homebrew : `uv`, `pnpm`, `postgresql@17` (`brew services start postgresql@17`, binaires dans `/opt/homebrew/opt/postgresql@17/bin`) ; Chromium Playwright installé (E2E possibles en local). `backend/.env` : `PAYMENT_PROVIDER=simulation`. `gh` non authentifié (dépôt cloné en HTTPS).
+Nouveau poste (2026-10-26) : macOS 26.1, Node 25, Homebrew : `uv`, `pnpm`, `postgresql@17` (`brew services start postgresql@17`, binaires dans `/opt/homebrew/opt/postgresql@17/bin`) ; Chromium Playwright installé (E2E possibles en local). `backend/.env` : `PAYMENT_PROVIDER=simulation`. `gh` authentifié (compte Jihem225).
