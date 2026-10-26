@@ -1,34 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { placeOrder } from "./order";
 import { totp } from "./totp";
 
 // Comptes créés par seed_demo quand SEED_STAFF_PASSWORD / SEED_MANAGER_TOTP_SECRET sont fournis (CI).
 const PASSWORD = process.env.SEED_STAFF_PASSWORD ?? "";
 const SECRET = process.env.SEED_MANAGER_TOTP_SECRET ?? "";
 test.skip(!PASSWORD || !SECRET, "comptes de test non configurés");
-
-async function placeOrder(page: Page): Promise<string> {
-  await page.goto("/"); // pose le cookie CSRF
-  const csrf = (await page.context().cookies()).find((c) => c.name === "csrf")?.value ?? "";
-  const headers = { "X-CSRF-Token": csrf };
-  const product = await (await page.request.get("/api/v1/catalog/products/vetiver-plateau")).json();
-  const communes = await (await page.request.get("/api/v1/delivery/communes")).json();
-  await page.request.post("/api/v1/cart/items", { headers, data: { variant_id: product.variants[0].id, quantity: 1 } });
-  const preview = await (await page.request.post("/api/v1/checkout/preview", { headers, data: { commune_id: communes[0].id } })).json();
-  const order = await page.request.post("/api/v1/orders", {
-    headers,
-    data: {
-      customer_name: "Client Parcours",
-      phone: "0708123456",
-      commune_id: communes[0].id,
-      address_line: "Riviera 3, villa 12",
-      accept_terms: true,
-      expected_total: preview.total,
-      idempotency_key: crypto.randomUUID(),
-    },
-  });
-  expect(order.status()).toBe(201);
-  return (await order.json()).number;
-}
 
 async function login(page: Page, path: string, email: string, withCode: boolean) {
   await page.goto(path);

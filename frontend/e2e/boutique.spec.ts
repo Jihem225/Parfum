@@ -48,3 +48,16 @@ test("suivi : un mauvais couple numéro / téléphone reste générique", async 
   await page.getByRole("button", { name: "Suivre" }).click();
   await expect(page.getByText("Aucune commande ne correspond à ce numéro et ce téléphone.")).toBeVisible();
 });
+
+test("recherche sans accents et rupture de stock affichée", async ({ page }) => {
+  await page.goto("/parfums");
+  await page.getByLabel("Rechercher un parfum").fill("neroli");
+  await page.getByRole("button", { name: "Chercher" }).click();
+  await expect(page).toHaveURL(/q=neroli/);
+  await expect(page.getByRole("link", { name: /Néroli d'Assinie/ }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Ambre Lagune/ })).toHaveCount(0);
+
+  await page.goto("/parfums/oud-cocody");
+  await page.getByRole("button", { name: /100 ml/ }).click(); // stock 0 dans les données d'exemple
+  await expect(page.getByRole("button", { name: "Rupture de stock" })).toBeDisabled();
+});
