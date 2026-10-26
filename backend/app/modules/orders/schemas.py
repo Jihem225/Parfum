@@ -7,7 +7,7 @@ from app.core.validators import PersonName, Phone
 from app.modules.auth.schemas import Email
 from app.modules.cart.schemas import CartOut
 from app.modules.orders.models import CallResult, EventKind, FailureReason, OrderStatus
-from app.modules.payments.models import PaymentStatus
+from app.modules.payments.models import PaymentMethod, PaymentStatus
 
 AddressLine = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=255)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
@@ -26,10 +26,12 @@ class CheckoutIn(BaseModel):
     accept_terms: bool  # CGV (RG-29)
     expected_total: Annotated[int, Field(gt=0)]  # total affiché au client : un écart est signalé
     idempotency_key: Annotated[str, StringConstraints(min_length=16, max_length=64)]
+    payment_method: PaymentMethod = PaymentMethod.CASH_ON_DELIVERY
 
 
 class PreviewIn(BaseModel):
     commune_id: int
+    payment_method: PaymentMethod = PaymentMethod.CASH_ON_DELIVERY
 
 
 class CheckoutPreview(BaseModel):
@@ -76,6 +78,29 @@ class ReturnLine(BaseModel):
     lost: Annotated[int, Field(ge=0, le=5)] = 0  # abîmé : perte
 
 
+class RefundIn(BaseModel):
+    amount: Annotated[int, Field(gt=0)]
+    note: Note = ""
+
+
+class PaymentStart(BaseModel):
+    token: Annotated[str, StringConstraints(max_length=64)]
+
+
+class PaymentState(BaseModel):
+    order_status: OrderStatus
+    payment_status: PaymentStatus
+
+
+class PaymentLink(BaseModel):
+    url: str  # page de paiement hébergée par le prestataire
+
+
+class SimulatedPayment(BaseModel):
+    token: Annotated[str, StringConstraints(max_length=64)]
+    paid: bool
+
+
 class ReturnIn(BaseModel):
     items: Annotated[list[ReturnLine], Field(min_length=1, max_length=20)]
     note: Note = ""
@@ -113,10 +138,11 @@ class OrderOut(BaseModel):
     delivery_delay_label: str
     subtotal: int
     total: int
-    payment_method: Literal["CASH_ON_DELIVERY"]
+    payment_method: PaymentMethod
     items: list[OrderLineOut]
     history: list[StatusStep]
     can_cancel: bool
+    payment_token: str | None = None  # mobile money non payé : permet d'ouvrir le paiement
 
 
 class OrderSummary(BaseModel):

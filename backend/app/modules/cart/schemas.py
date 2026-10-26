@@ -39,4 +39,5 @@ class CartOut(BaseModel):
     item_count: int
     subtotal: int
     exceeds_cod_limit: bool  # RG-23 : au-delà, le client est invité à contacter la boutique
+    mobile_money: bool  # paiement en ligne disponible (sans plafond)
     can_checkout: bool

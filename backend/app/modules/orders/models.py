@@ -8,6 +8,7 @@ from app.core.db import Base, IdMixin, TimestampMixin, str_enum
 
 
 class OrderStatus(enum.StrEnum):
+    EN_ATTENTE_PAIEMENT = "EN_ATTENTE_PAIEMENT"  # mobile money : annulée si non payée à temps
     EN_ATTENTE_CONFIRMATION = "EN_ATTENTE_CONFIRMATION"
     CONFIRMEE = "CONFIRMEE"
     EN_PREPARATION = "EN_PREPARATION"

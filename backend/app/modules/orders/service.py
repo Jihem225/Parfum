@@ -1,9 +1,11 @@
 """Commandes : création depuis le panier, machine à états (§6.1), appels de confirmation.
 Chaque changement écrit statut, stock, paiement, historique et audit dans la même transaction."""
 
+import hashlib
+import hmac
 from collections import Counter
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -28,10 +30,12 @@ from app.modules.orders.models import (
 )
 from app.modules.orders.notify import fcfa
 from app.modules.orders.schemas import CheckoutIn
-from app.modules.payments.models import Payment, PaymentStatus
+from app.modules.payments.models import Payment, PaymentMethod, PaymentStatus
+from app.modules.payments.providers import Notification, get_provider
 
 S = OrderStatus
 TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
+    S.EN_ATTENTE_PAIEMENT: {S.CONFIRMEE, S.ANNULEE},  # confirmée par le paiement, pas un appel
     S.EN_ATTENTE_CONFIRMATION: {S.CONFIRMEE, S.ANNULEE},
     S.CONFIRMEE: {S.EN_PREPARATION, S.ANNULEE},
     S.EN_PREPARATION: {S.EN_LIVRAISON, S.ANNULEE},
@@ -41,13 +45,15 @@ TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     S.RETOURNEE: set(),
     S.ANNULEE: set(),
 }
-CANCELLABLE = {S.EN_ATTENTE_CONFIRMATION, S.CONFIRMEE, S.EN_PREPARATION}  # RG-32
+CANCELLABLE = {S.EN_ATTENTE_PAIEMENT, S.EN_ATTENTE_CONFIRMATION, S.CONFIRMEE, S.EN_PREPARATION}
 FINAL = {S.LIVREE, S.RETOURNEE, S.ANNULEE}
 MAX_UNANSWERED_CALLS = 3  # RG-31
 MAX_DELIVERY_ATTEMPTS = 2  # RG-44
 RETRIABLE = {FailureReason.INJOIGNABLE, FailureReason.REPORTEE}
+PAYMENT_DELAY = timedelta(minutes=30)  # mobile money non payé : commande annulée
 
 LABELS = {
+    S.EN_ATTENTE_PAIEMENT: "En attente de paiement",
     S.EN_ATTENTE_CONFIRMATION: "En attente de confirmation",
     S.CONFIRMEE: "Confirmée",
     S.EN_PREPARATION: "En préparation",
@@ -57,6 +63,17 @@ LABELS = {
     S.RETOURNEE: "Retournée",
     S.ANNULEE: "Annulée",
 }
+
+
+def payment_token(number: str) -> str:
+    """Jeton remis à l'acheteur : seul lui peut ouvrir ou suivre le paiement en ligne."""
+    message = f"paiement:{number}".encode()
+    return hmac.new(settings.secret_key.encode(), message, hashlib.sha256).hexdigest()[:32]
+
+
+def check_payment_token(number: str, token: str) -> None:
+    if not hmac.compare_digest(payment_token(number.upper()), token):
+        raise AppError(404, "NOT_FOUND", "Commande introuvable.")
 
 
 def served_commune(db: Session, commune_id: int) -> Commune:
@@ -91,7 +108,12 @@ def checkout(
         )
     commune = served_commune(db, data.commune_id)
     total = summary.subtotal + commune.delivery_fee
-    if total > cart_service.COD_LIMIT:
+    mobile = data.payment_method == PaymentMethod.MOBILE_MONEY
+    if mobile and get_provider() is None:
+        raise AppError(
+            422, "PAYMENT_UNAVAILABLE", "Le paiement par mobile money n'est pas disponible."
+        )
+    if not mobile and total > cart_service.COD_LIMIT:
         raise AppError(
             409,
             "COD_LIMIT",
@@ -109,7 +131,7 @@ def checkout(
     order = Order(
         number=f"{settings.order_number_prefix}-{db.scalar(order_number_seq.next_value())}",
         user_id=user.id if user else None,
-        status=S.EN_ATTENTE_CONFIRMATION,
+        status=S.EN_ATTENTE_PAIEMENT if mobile else S.EN_ATTENTE_CONFIRMATION,
         idempotency_key=data.idempotency_key,
         customer_name=data.customer_name,
         phone=data.phone,
@@ -144,12 +166,19 @@ def checkout(
         )
         for line in summary.items
     )
-    db.add(Payment(order_id=order.id, amount=total, status=PaymentStatus.A_ENCAISSER))
+    db.add(
+        Payment(
+            order_id=order.id,
+            amount=total,
+            method=data.payment_method,
+            status=PaymentStatus.A_PAYER if mobile else PaymentStatus.A_ENCAISSER,
+        )
+    )
     db.add(
         OrderEvent(
             order_id=order.id,
             kind=EventKind.STATUS_CHANGE,
-            to_status=S.EN_ATTENTE_CONFIRMATION,
+            to_status=order.status,
             user_id=user.id if user else None,
         )
     )
@@ -192,12 +221,18 @@ def transition(
             "INVALID_TRANSITION",
             f"Impossible de passer de « {LABELS[origin]} » à « {LABELS[to]} ».",
         )
+    paid = payment(db, order)
+    if origin == S.EN_ATTENTE_PAIEMENT and to == S.CONFIRMEE and paid.status != PaymentStatus.PAYE:
+        raise AppError(409, "NOT_PAID", "Cette commande sera confirmée par son paiement.")
     if origin == S.ECHEC_LIVRAISON and to == S.EN_LIVRAISON:
         _check_retry(db, order)
     lines = {i.variant_id: i.quantity for i in items(db, order)}
     if to == S.ANNULEE:
         inventory.release(db, lines, order_id=order.id, user_id=actor_id)  # RG-14
-        payment(db, order).status = PaymentStatus.ANNULE
+        if (
+            paid.status != PaymentStatus.PAYE
+        ):  # payée en ligne : reste « Payé » jusqu'au remboursement
+            paid.status = PaymentStatus.ANNULE
         order.cancel_reason = note or None
     elif to == S.EN_LIVRAISON:
         courier = db.get(User, courier_id) if courier_id is not None else None
@@ -207,8 +242,8 @@ def transition(
             inventory.ship(db, lines, order_id=order.id, user_id=actor_id)  # RG-13
         order.courier_id = courier.id
         order.delivery_attempts += 1
-    elif to == S.LIVREE:  # RG-43 : livrée implique encaissée, par le livreur de la commande
-        paid = payment(db, order)
+    elif to == S.LIVREE and paid.method == PaymentMethod.CASH_ON_DELIVERY:
+        # RG-43 : livrée implique encaissée, par le livreur de la commande
         paid.status = PaymentStatus.ENCAISSE
         paid.collected_by = order.courier_id
         paid.collected_at = datetime.now(UTC)
@@ -236,15 +271,22 @@ def transition(
 
 
 def deliver(db: Session, order: Order, amount_collected: int, *, actor_id: int) -> None:
-    """Le livreur confirme avoir reçu le montant total exact (RG-43, US-23)."""
-    if order.status == S.EN_LIVRAISON and amount_collected != order.total:
+    """Le livreur confirme avoir reçu le montant total exact (RG-43, US-23) ; rien pour une
+    commande déjà payée par mobile money."""
+    due = amount_due(db, order)
+    if order.status == S.EN_LIVRAISON and amount_collected != due:
         raise AppError(
             422,
             "AMOUNT_MISMATCH",
-            f"Le montant encaissé doit être exactement {fcfa(order.total)}.",
-            {"total": order.total},
+            f"Le montant encaissé doit être exactement {fcfa(due)}.",
+            {"total": due},
         )
-    transition(db, order, S.LIVREE, actor_id=actor_id, note=f"Encaissé : {fcfa(order.total)}")
+    note = f"Encaissé : {fcfa(due)}" if due else "Déjà payée par mobile money"
+    transition(db, order, S.LIVREE, actor_id=actor_id, note=note)
+
+
+def amount_due(db: Session, order: Order) -> int:
+    return 0 if payment(db, order).method == PaymentMethod.MOBILE_MONEY else order.total
 
 
 def _last_failure(db: Session, order: Order) -> FailureReason | None:
@@ -298,13 +340,13 @@ def receive_return(
             "Indiquez, pour chaque article, combien reviennent en stock et combien sont perdus.",
         )
     paid = payment(db, order)
-    if order.status == S.LIVREE:
-        if paid.status != PaymentStatus.REMIS:
-            raise AppError(
-                409,
-                "CASH_NOT_REMITTED",
-                "Enregistrez d'abord la remise de caisse du livreur pour cette commande.",
-            )
+    if paid.status == PaymentStatus.ENCAISSE:
+        raise AppError(
+            409,
+            "CASH_NOT_REMITTED",
+            "Enregistrez d'abord la remise de caisse du livreur pour cette commande.",
+        )
+    if paid.status in (PaymentStatus.REMIS, PaymentStatus.PAYE):  # l'argent est à la boutique
         if refund_amount is None or not 0 <= refund_amount <= order.total:
             raise AppError(
                 422,
@@ -351,3 +393,81 @@ def record_call(db: Session, order: Order, result: CallResult, note: str, *, act
 
 def call_counts(events: list[OrderEvent]) -> Counter[CallResult]:
     return Counter(e.call_result for e in events if e.call_result is not None)
+
+
+def apply_notification(db: Session, notice: Notification) -> tuple[Order, bool]:
+    """Avis de paiement déjà vérifié par le prestataire. Idempotent : un avis rejoué ou un échec
+    ne change rien (la commande expire seule). Renvoie (commande, paiement enregistré ?)."""
+    order = locked(db, notice.order_number)
+    paid = payment(db, order)
+    if paid.method != PaymentMethod.MOBILE_MONEY:
+        raise AppError(409, "NOT_MOBILE_MONEY", "Cette commande se paie à la livraison.")
+    if notice.amount != paid.amount:
+        raise AppError(409, "AMOUNT_MISMATCH", "Montant payé différent du montant de la commande.")
+    # ANNULE : commande expirée ou annulée avant l'avis ; l'argent est bien reçu, on l'enregistre.
+    if not notice.paid or paid.status not in (PaymentStatus.A_PAYER, PaymentStatus.ANNULE):
+        return order, False
+    before = paid.status
+    paid.status = PaymentStatus.PAYE
+    paid.collected_at = datetime.now(UTC)
+    paid.provider_ref = notice.provider_ref
+    if order.status == S.EN_ATTENTE_PAIEMENT:
+        transition(db, order, S.CONFIRMEE, actor_id=None, note="Payée par mobile money")
+    else:  # annulée entre-temps (délai dépassé, client) : l'argent est reçu, il faut rembourser
+        db.add(
+            OrderEvent(
+                order_id=order.id,
+                kind=EventKind.NOTE,
+                note=f"Paiement reçu après annulation : {fcfa(paid.amount)} à rembourser.",
+            )
+        )
+    audit(
+        db,
+        actor_id=None,
+        action="payment.received",
+        entity_type="order",
+        entity_id=order.number,
+        before={"status": before.value},
+        after={"status": PaymentStatus.PAYE.value, "provider_ref": notice.provider_ref},
+    )
+    return order, True
+
+
+def expire_unpaid(db: Session, now: datetime) -> list[Order]:
+    """Commandes mobile money non payées dans le délai : annulées, stock libéré."""
+    expired = list(
+        db.scalars(
+            select(Order)
+            .where(Order.status == S.EN_ATTENTE_PAIEMENT, Order.created_at < now - PAYMENT_DELAY)
+            .with_for_update(skip_locked=True)
+        )
+    )
+    for order in expired:
+        transition(
+            db, order, S.ANNULEE, actor_id=None, note="Paiement non reçu dans les 30 minutes"
+        )
+    return expired
+
+
+def refund_cancelled(db: Session, order: Order, amount: int, note: str, *, actor_id: int) -> None:
+    """Remboursement, fait chez le prestataire, d'une commande annulée après son paiement."""
+    paid = payment(db, order)
+    if order.status != S.ANNULEE or paid.status != PaymentStatus.PAYE:
+        raise AppError(409, "NOT_REFUNDABLE", "Aucun paiement à rembourser sur cette commande.")
+    if not 0 < amount <= paid.amount:
+        raise AppError(
+            422, "REFUND_REQUIRED", f"Indiquez le montant remboursé (jusqu'à {fcfa(paid.amount)})."
+        )
+    paid.status = PaymentStatus.REMBOURSE
+    paid.refunded_at = datetime.now(UTC)
+    text = f"Remboursé : {fcfa(amount)}" + (f" — {note}" if note else "")
+    db.add(OrderEvent(order_id=order.id, kind=EventKind.NOTE, note=text, user_id=actor_id))
+    audit(
+        db,
+        actor_id=actor_id,
+        action="payment.refund",
+        entity_type="order",
+        entity_id=order.number,
+        before={"status": PaymentStatus.PAYE.value},
+        after={"status": PaymentStatus.REMBOURSE.value, "amount": amount},
+    )

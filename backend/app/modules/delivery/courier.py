@@ -77,7 +77,7 @@ def _out(db: Session, order: Order) -> DeliveryOut:
         commune_name=order.commune_name,
         address_line=order.address_line,
         landmark=order.landmark,
-        amount_to_collect=order.total,
+        amount_to_collect=service.amount_due(db, order),  # 0 si payée par mobile money
         delivery_attempts=order.delivery_attempts,
         items=[
             DeliveryItem(product_name=i.product_name, volume_ml=i.volume_ml, quantity=i.quantity)

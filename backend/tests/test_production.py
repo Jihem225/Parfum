@@ -35,6 +35,7 @@ def test_render_database_url_uses_psycopg3() -> None:
         ({"secret_key": "court"}, "SECRET_KEY"),
         ({"s3_bucket": ""}, "S3_"),
         ({"trusted_proxy_hops": 0}, "TRUSTED_PROXY_HOPS"),
+        ({"payment_provider": "simulation"}, "PAYMENT_PROVIDER"),
     ],
 )
 def test_unsafe_production_settings_refuse_to_start(override: dict[str, Any], reason: str) -> None:

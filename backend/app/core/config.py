@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     email_from: str = "Projet Parfums <no-reply@example.com>"
     shop_notification_email: str = ""  # destinataire des alertes (stock bas, nouvelles commandes)
     order_number_prefix: str = "PP"  # provisoire (RG-28)
+    # Mobile money : "" = désactivé ; "simulation" = faux paiements (développement, CI ; refusé en
+    # production). Les vrais prestataires s'ajoutent dans app/modules/payments/providers.py.
+    payment_provider: Literal["", "simulation"] = ""
+    payment_webhook_secret: str = ""  # signature des avis de paiement du prestataire
     media_dir: str = "media"  # stockage local des images (développement)
     media_base_url: str = "/media"
     # Cloudflare R2 (API S3) : si S3_BUCKET est défini, les images y vont au lieu du disque.
@@ -48,6 +52,7 @@ class Settings(BaseSettings):
                     self.trusted_proxy_hops < 1,
                     "TRUSTED_PROXY_HOPS ≥ 1 (sinon limites par IP globales)",
                 ),
+                (self.payment_provider == "simulation", "PAYMENT_PROVIDER sans simulation"),
             )
             if broken
         ]

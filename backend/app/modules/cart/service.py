@@ -14,6 +14,7 @@ from app.modules.cart.models import Cart, CartItem
 from app.modules.cart.schemas import CartLine, CartOut
 from app.modules.catalog.models import Product, ProductImage, ProductStatus, ProductVariant
 from app.modules.catalog.products import image_out
+from app.modules.payments.providers import get_provider
 
 MAX_QUANTITY = 5  # RG-22 : par contenance et par commande
 MAX_LINES = 20  # garde-fou contre les paniers géants
@@ -164,12 +165,14 @@ def view(db: Session, cart: Cart | None) -> CartOut:
             )
         )
     subtotal = sum(line.line_total for line in lines if line.issue != "UNAVAILABLE")
+    mobile_money = get_provider() is not None
     return CartOut(
         items=lines,
         item_count=sum(line.quantity for line in lines),
         subtotal=subtotal,
         exceeds_cod_limit=subtotal > COD_LIMIT,
+        mobile_money=mobile_money,
         can_checkout=bool(lines)
-        and subtotal <= COD_LIMIT
+        and (subtotal <= COD_LIMIT or mobile_money)  # le plafond ne vaut qu'à la livraison
         and all(line.issue is None for line in lines),
     )

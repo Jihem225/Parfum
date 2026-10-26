@@ -416,6 +416,7 @@ Liste exhaustive (mise à jour à l'étape 10). En production, les valeurs sont 
 | `RESEND_API_KEY`, `EMAIL_FROM` | recommandé | e-mails ; sans clé : console (dév.) ou erreur journalisée (prod.) |
 | `SHOP_NOTIFICATION_EMAIL` | recommandé | destinataire des alertes (nouvelles commandes, stock bas) |
 | `ORDER_NUMBER_PREFIX` | non | préfixe des numéros de commande (défaut `PP`) |
+| `PAYMENT_PROVIDER`, `PAYMENT_WEBHOOK_SECRET` | non | mobile money : vide = désactivé, `simulation` = faux paiements (refusé en production) ; prestataire réel à brancher |
 | `TEST_DATABASE_URL` | tests | base dédiée aux tests pytest |
 | `SEED_STAFF_PASSWORD`, `SEED_MANAGER_TOTP_SECRET` | CI | comptes de test E2E créés par `seed_demo` (jamais en production) |
 

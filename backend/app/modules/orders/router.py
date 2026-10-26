@@ -1,3 +1,5 @@
+import json
+import uuid
 from datetime import date, datetime, time, timedelta
 from typing import Annotated
 from zoneinfo import ZoneInfo
@@ -7,9 +9,10 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from app.core import rate_limit
+from app.core.config import settings
 from app.core.email import send_email
 from app.core.errors import AppError
-from app.modules.auth.deps import DB, BackOffice, CurrentUser, client_ip
+from app.modules.auth.deps import DB, BackOffice, CurrentUser, Owner, client_ip
 from app.modules.auth.models import User, UserRole
 from app.modules.cart import service as cart_service
 from app.modules.cart.router import CART_COOKIE, OptionalUser
@@ -35,14 +38,20 @@ from app.modules.orders.schemas import (
     OrderLineOut,
     OrderOut,
     OrderSummary,
+    PaymentLink,
+    PaymentStart,
+    PaymentState,
     PersonRef,
     PreviewIn,
+    RefundIn,
     ReturnIn,
+    SimulatedPayment,
     StatusStep,
     TrackIn,
     TransitionIn,
 )
-from app.modules.payments.models import Payment
+from app.modules.payments.models import Payment, PaymentMethod
+from app.modules.payments.providers import get_provider, sign
 
 public = APIRouter(tags=["commandes"])
 admin = APIRouter(prefix="/admin/orders", tags=["admin: commandes"])
@@ -60,6 +69,7 @@ def _events(db: Session, order: Order) -> list[OrderEvent]:
 
 
 def _out(db: Session, order: Order, *, can_cancel: bool = False) -> OrderOut:
+    awaiting = order.status == OrderStatus.EN_ATTENTE_PAIEMENT
     return OrderOut(
         number=order.number,
         status=order.status,
@@ -74,7 +84,7 @@ def _out(db: Session, order: Order, *, can_cancel: bool = False) -> OrderOut:
         delivery_delay_label=order.delivery_delay_label,
         subtotal=order.subtotal,
         total=order.total,
-        payment_method="CASH_ON_DELIVERY",
+        payment_method=service.payment(db, order).method,
         items=[
             OrderLineOut.model_validate(i, from_attributes=True) for i in service.items(db, order)
         ],
@@ -84,6 +94,7 @@ def _out(db: Session, order: Order, *, can_cancel: bool = False) -> OrderOut:
             if e.kind == EventKind.STATUS_CHANGE and e.to_status is not None
         ],
         can_cancel=can_cancel and order.status in service.CANCELLABLE,
+        payment_token=service.payment_token(order.number) if awaiting else None,
     )
 
 
@@ -122,6 +133,7 @@ def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB)
     cart = cart_service.view(db, cart_service.find(db, user, request.cookies.get(CART_COOKIE)))
     commune = service.served_commune(db, data.commune_id)
     total = cart.subtotal + commune.delivery_fee
+    cod = data.payment_method == PaymentMethod.CASH_ON_DELIVERY
     return CheckoutPreview(
         cart=cart,
         commune_name=commune.name,
@@ -131,7 +143,7 @@ def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB)
         exceeds_cod_limit=total > cart_service.COD_LIMIT,
         can_order=bool(cart.items)
         and all(line.issue is None for line in cart.items)
-        and total <= cart_service.COD_LIMIT,
+        and (total <= cart_service.COD_LIMIT if cod else get_provider() is not None),
     )
 
 
@@ -143,7 +155,9 @@ def place_order(
     cart = cart_service.find(db, user, request.cookies.get(CART_COOKIE))
     order, created = service.checkout(db, data, cart=cart, user=user)
     db.commit()
-    if created:
+    if (
+        created and order.status == OrderStatus.EN_ATTENTE_CONFIRMATION
+    ):  # mobile money : au paiement
         _send(
             background, notify.to_customer(order), notify.to_shop(order, service.items(db, order))
         )
@@ -201,6 +215,76 @@ def cancel_my_order(
     db.commit()
     _send(background, notify.to_customer(order))
     return _out(db, order, can_cancel=True)
+
+
+# --- Paiement mobile money ---------------------------------------------------------------------
+
+
+@public.post("/orders/{number}/payment")
+def start_payment(number: str, data: PaymentStart, db: DB) -> PaymentLink:
+    """Ouvre (ou rouvre après un échec) la page de paiement du prestataire."""
+    service.check_payment_token(number, data.token)
+    provider = get_provider()
+    order = db.scalar(select(Order).where(Order.number == number.upper()))
+    if provider is None or order is None or order.status != OrderStatus.EN_ATTENTE_PAIEMENT:
+        raise AppError(409, "NOT_PAYABLE", "Cette commande n'attend plus de paiement.")
+    back = f"{settings.frontend_origin}/commande/paiement?numero={order.number}&t={data.token}"
+    return PaymentLink(url=provider.checkout_url(order.number, order.total, back))
+
+
+@public.get("/orders/{number}/payment")
+def payment_state(number: str, token: str, db: DB) -> PaymentState:
+    service.check_payment_token(number, token)
+    order = db.scalar(select(Order).where(Order.number == number.upper()))
+    if order is None:
+        raise AppError(404, "NOT_FOUND", "Commande introuvable.")
+    return PaymentState(order_status=order.status, payment_status=service.payment(db, order).status)
+
+
+def _notified(db: DB, body: bytes, headers: dict[str, str], background: BackgroundTasks) -> None:
+    provider = get_provider()
+    if provider is None:
+        raise AppError(404, "NOT_FOUND", "Paiement en ligne désactivé.")
+    order, recorded = service.apply_notification(db, provider.read(body, headers))
+    db.commit()
+    if recorded and order.status == OrderStatus.CONFIRMEE:
+        items = service.items(db, order)
+        _send(background, notify.to_customer(order), notify.to_shop(order, items, prepaid=True))
+    elif recorded:
+        _send(background, notify.late_payment(order))
+
+
+@public.post("/payments/notifications")
+async def payment_notification(
+    request: Request, db: DB, background: BackgroundTasks
+) -> dict[str, bool]:
+    """Avis du prestataire (sans cookie : exempté du CSRF, authentifié par sa signature calculée
+    sur les octets bruts)."""
+    _notified(db, await request.body(), dict(request.headers), background)
+    return {"received": True}
+
+
+@public.post("/payments/simulation/{number}")
+def simulate_payment(
+    number: str, data: SimulatedPayment, db: DB, background: BackgroundTasks
+) -> PaymentState:
+    """Développement et CI uniquement : produit l'avis signé qu'enverrait un prestataire."""
+    if settings.payment_provider != "simulation":
+        raise AppError(404, "NOT_FOUND", "Simulation désactivée.")
+    service.check_payment_token(number, data.token)
+    order = db.scalar(select(Order).where(Order.number == number.upper()))
+    if order is None:
+        raise AppError(404, "NOT_FOUND", "Commande introuvable.")
+    body = json.dumps(
+        {
+            "id": f"sim-{uuid.uuid4().hex[:12]}",
+            "order_number": order.number,
+            "amount": order.total,
+            "status": "paid" if data.paid else "failed",
+        }
+    ).encode()
+    _notified(db, body, {"x-signature": sign(body)}, background)
+    return PaymentState(order_status=order.status, payment_status=service.payment(db, order).status)
 
 
 # --- Back-office ---------------------------------------------------------------------------------
@@ -342,7 +426,17 @@ def change_status(
         db, order, data.to, actor_id=user.id, note=data.note, courier_id=data.courier_id
     )
     db.commit()
-    _send(background, notify.to_customer(order))
+    prepaid = service.payment(db, order).method == PaymentMethod.MOBILE_MONEY
+    _send(background, notify.to_customer(order, prepaid=prepaid))
+    return _admin_out(db, order)
+
+
+@admin.post("/{number}/refund")
+def refund_order(number: str, data: RefundIn, user: Owner, db: DB) -> AdminOrderOut:
+    """Commande payée par mobile money puis annulée : remboursement fait chez le prestataire."""
+    order = service.locked(db, number)
+    service.refund_cancelled(db, order, data.amount, data.note, actor_id=user.id)
+    db.commit()
     return _admin_out(db, order)
 
 

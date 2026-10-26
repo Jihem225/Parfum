@@ -9,10 +9,13 @@ from app.core.db import Base, IdMixin, TimestampMixin, str_enum
 
 class PaymentMethod(enum.StrEnum):
     CASH_ON_DELIVERY = "CASH_ON_DELIVERY"
+    MOBILE_MONEY = "MOBILE_MONEY"
 
 
 class PaymentStatus(enum.StrEnum):
     A_ENCAISSER = "A_ENCAISSER"
+    A_PAYER = "A_PAYER"  # mobile money en attente du prestataire
+    PAYE = "PAYE"  # mobile money reçu (collected_at = date du paiement)
     ENCAISSE = "ENCAISSE"
     REMIS = "REMIS"
     ANNULE = "ANNULE"
@@ -66,3 +69,4 @@ class Payment(IdMixin, TimestampMixin, Base):
         BigInteger, ForeignKey("cash_remittances.id", ondelete="RESTRICT"), index=True
     )
     refunded_at: Mapped[datetime | None]
+    provider_ref: Mapped[str | None] = mapped_column(String(100))  # transaction du prestataire

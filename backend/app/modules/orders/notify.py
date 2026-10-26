@@ -15,7 +15,7 @@ def _track_link(order: Order) -> str:
     return f"{settings.frontend_origin}/suivi?numero={order.number}"
 
 
-def to_customer(order: Order) -> Message | None:
+def to_customer(order: Order, *, prepaid: bool = False) -> Message | None:
     if not order.email:
         return None
     n, total = order.number, fcfa(order.total)
@@ -33,7 +33,8 @@ def to_customer(order: Order) -> Message | None:
         ),
         OrderStatus.EN_LIVRAISON: (
             f"Commande {n} en route",
-            f"Votre commande {n} est partie en livraison. Merci de prévoir {total} en espèces.",
+            f"Votre commande {n} est partie en livraison. "
+            + ("Elle est déjà payée." if prepaid else f"Merci de prévoir {total} en espèces."),
         ),
         OrderStatus.LIVREE: (
             f"Commande {n} livrée",
@@ -54,7 +55,7 @@ def to_customer(order: Order) -> Message | None:
     )
 
 
-def to_shop(order: Order, items: list[OrderItem]) -> Message | None:
+def to_shop(order: Order, items: list[OrderItem], *, prepaid: bool = False) -> Message | None:
     if not settings.shop_notification_email:
         return None
     lines = "\n".join(
@@ -65,6 +66,22 @@ def to_shop(order: Order, items: list[OrderItem]) -> Message | None:
         settings.shop_notification_email,
         f"Nouvelle commande {order.number} — {fcfa(order.total)}",
         f"{order.customer_name} — {order.phone}\n{order.commune_name}, {order.address_line}\n\n"
-        f"{lines}\nLivraison : {fcfa(order.delivery_fee)}\nTotal à encaisser : "
-        f"{fcfa(order.total)}\n\nÀ confirmer par téléphone.",
+        f"{lines}\nLivraison : {fcfa(order.delivery_fee)}\n"
+        + (
+            f"Payée par mobile money : {fcfa(order.total)}. Déjà confirmée, à préparer."
+            if prepaid
+            else f"Total à encaisser : {fcfa(order.total)}\n\nÀ confirmer par téléphone."
+        ),
+    )
+
+
+def late_payment(order: Order) -> Message | None:
+    if not settings.shop_notification_email:
+        return None
+    return (
+        settings.shop_notification_email,
+        f"À rembourser : paiement reçu sur la commande annulée {order.number}",
+        f"Le paiement mobile money de {fcfa(order.total)} est arrivé après l'annulation de la "
+        f"commande {order.number} ({order.customer_name}, {order.phone}). Remboursez-le depuis le "
+        "tableau de bord du prestataire, puis enregistrez le remboursement dans le back-office.",
     )

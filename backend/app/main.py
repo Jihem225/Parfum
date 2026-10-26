@@ -1,3 +1,6 @@
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
@@ -29,6 +32,7 @@ from app.modules.delivery.courier import router as courier_router
 from app.modules.delivery.router import admin as communes_admin_router
 from app.modules.delivery.router import public as delivery_router
 from app.modules.inventory.router import admin as stock_admin_router
+from app.modules.orders.jobs import expire_forever
 from app.modules.orders.router import admin as orders_admin_router
 from app.modules.orders.router import public as orders_router
 from app.modules.payments.router import admin as cash_admin_router
@@ -37,7 +41,20 @@ from app.modules.settings.router import public as shop_router
 from app.modules.staff.router import router as staff_router
 
 is_prod = settings.app_env == "production"
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Les tests appellent la fonction directement, sans boucle de fond.
+    run = settings.payment_provider and settings.app_env != "test"
+    task = asyncio.create_task(expire_forever()) if run else None
+    yield
+    if task:
+        task.cancel()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Projet Parfums — API",
     version="0.1.0",
     docs_url=None if is_prod else "/api/v1/docs",
