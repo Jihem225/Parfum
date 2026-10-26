@@ -12,13 +12,18 @@ from app.core.config import settings
 from app.core.csrf import csrf_middleware
 from app.core.db import get_db
 from app.core.errors import install_error_handlers
+from app.modules.audit.router import admin as audit_admin_router
 from app.modules.auth.router import router as auth_router
 from app.modules.cart.router import router as cart_router
 from app.modules.catalog.products_router import admin as products_admin_router
 from app.modules.catalog.products_router import public as products_router
 from app.modules.catalog.router import admin as catalog_admin_router
 from app.modules.catalog.router import public as catalog_router
+from app.modules.contact.router import admin as contact_admin_router
+from app.modules.contact.router import public as contact_router
+from app.modules.customers.admin import admin as customers_admin_router
 from app.modules.customers.router import router as customer_router
+from app.modules.dashboard.router import admin as dashboard_admin_router
 from app.modules.delivery.courier import router as courier_router
 from app.modules.delivery.router import admin as communes_admin_router
 from app.modules.delivery.router import public as delivery_router
@@ -26,6 +31,8 @@ from app.modules.inventory.router import admin as stock_admin_router
 from app.modules.orders.router import admin as orders_admin_router
 from app.modules.orders.router import public as orders_router
 from app.modules.payments.router import admin as cash_admin_router
+from app.modules.settings.router import admin as settings_admin_router
+from app.modules.settings.router import public as shop_router
 from app.modules.staff.router import router as staff_router
 
 is_prod = settings.app_env == "production"
@@ -66,6 +73,13 @@ api.include_router(orders_admin_router)
 api.include_router(courier_router)
 api.include_router(cash_admin_router)
 api.include_router(customer_router)
+api.include_router(customers_admin_router)
+api.include_router(contact_router)
+api.include_router(contact_admin_router)
+api.include_router(shop_router)
+api.include_router(settings_admin_router)
+api.include_router(dashboard_admin_router)
+api.include_router(audit_admin_router)
 app.include_router(api)
 
 # Images du stockage local (développement) ; en production elles seront servies par R2.

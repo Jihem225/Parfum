@@ -87,6 +87,27 @@ def _out(db: Session, order: Order, *, can_cancel: bool = False) -> OrderOut:
     )
 
 
+def summaries(db: Session, user_id: int) -> list[OrderSummary]:
+    """Commandes d'un compte, de la plus récente à la plus ancienne."""
+    counts = (
+        select(OrderItem.order_id, func.sum(OrderItem.quantity).label("n"))
+        .group_by(OrderItem.order_id)
+        .subquery()
+    )
+    rows = db.execute(
+        select(Order, counts.c.n)
+        .join(counts, counts.c.order_id == Order.id)
+        .where(Order.user_id == user_id)
+        .order_by(Order.id.desc())
+    )
+    return [
+        OrderSummary(
+            number=o.number, status=o.status, created_at=o.created_at, total=o.total, item_count=n
+        )
+        for o, n in rows
+    ]
+
+
 def _send(background: BackgroundTasks, *messages: notify.Message | None) -> None:
     for message in messages:
         if message is not None:
@@ -152,23 +173,7 @@ def _mine(db: Session, user: User, number: str, *, lock: bool = False) -> Order:
 
 @public.get("/me/orders")
 def my_orders(user: CurrentUser, db: DB) -> list[OrderSummary]:
-    counts = (
-        select(OrderItem.order_id, func.sum(OrderItem.quantity).label("n"))
-        .group_by(OrderItem.order_id)
-        .subquery()
-    )
-    rows = db.execute(
-        select(Order, counts.c.n)
-        .join(counts, counts.c.order_id == Order.id)
-        .where(Order.user_id == user.id)
-        .order_by(Order.id.desc())
-    )
-    return [
-        OrderSummary(
-            number=o.number, status=o.status, created_at=o.created_at, total=o.total, item_count=n
-        )
-        for o, n in rows
-    ]
+    return summaries(db, user.id)
 
 
 @public.get("/me/orders/{number}")

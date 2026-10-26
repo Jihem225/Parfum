@@ -35,13 +35,16 @@ def login(client: TestClient, email: str, password: str, **extra: Any) -> Any:
         ("0708123456", "0708123456"),
         ("+225 07 08 12 34 56", "0708123456"),
         ("00225-05.44.21.87.90", "0544218790"),
+        ("+225 27 22 44 55 66", "2722445566"),  # fixe
     ],
 )
 def test_phone_is_normalized(raw: str, expected: str) -> None:
     assert normalize_ci_phone(raw) == expected
 
 
-@pytest.mark.parametrize("raw", ["708123456", "07081234567", "+33 6 12 34 56 78", "abc"])
+@pytest.mark.parametrize(
+    "raw", ["708123456", "07081234567", "+33 6 12 34 56 78", "abc", "1722445566"]
+)
 def test_invalid_phone_is_rejected(raw: str) -> None:
     with pytest.raises(ValueError, match="10 chiffres"):
         normalize_ci_phone(raw)

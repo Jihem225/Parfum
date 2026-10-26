@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.10 — Backend : pilotage et compléments du back-office** : en cours (6.10 promos et 6.11 avis/favoris du prompt maître : hors MVP).
+**Étape 7 — Frontend** : en cours. Le porteur a demandé d'enchaîner toutes les sous-étapes 7.1 à 7.5 sans validation intermédiaire (« vas-y fais toutes les étapes de l'étape 7 ») ; rapport unique en fin d'étape 7.
+
+- Étape 6.10 — Pilotage et compléments du back-office : **validée le 2026-10-26** (6.10 promos et 6.11 avis/favoris du prompt maître : hors MVP). **Étape 6 (backend) terminée.**
 
 - Étape 6.9 — Livraison, retours et compte client : **validée le 2026-10-26**, avec la proposition 6.10 « pilotage et compléments ».
 
@@ -88,6 +90,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/modules/delivery/{schemas,router}.py` (communes), `backend/app/modules/orders/{schemas,service,notify,router}.py`, `backend/app/core/errors.py` (messages de validation en français), `backend/tests/test_orders.py` — commandes (6.7, commité)
 - `backend/app/modules/payments/{schemas,router}.py`, `backend/app/modules/delivery/courier.py`, « Livrée » et `/checkout/preview` dans `orders/`, `backend/tests/test_cash.py` — livraison encaissée, espèces par livreur, remises de caisse (6.8, commité)
 - `backend/app/modules/customers/{schemas,router}.py` (profil, adresses), échec / nouvelle tentative / retour dans `orders/service.py`, `orders/router.py` et `delivery/courier.py`, `backend/tests/test_delivery.py` (6.9, commité)
+- `backend/app/modules/{dashboard,audit}/router.py`, `contact/router.py`, `settings/router.py`, `customers/admin.py`, `core/validators.py` (numéros fixes acceptés), `backend/tests/test_backoffice.py` (6.10, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -114,6 +117,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.3 : appels réels via le relais | listes publiques 200, collection inconnue 404, écriture anonyme 401 |
 | 2026-10-26 | CI GitHub (commit 6.3) | backend, frontend, e2e : verts |
 | 2026-10-26 | 6.4 : `pytest` | 75/75 réussis |
+| 2026-10-26 | 6.10 : `pytest` | 136/136 réussis |
+| 2026-10-26 | 6.10 : démonstration réelle via le relais (base de dev, données supprimées, numérotation remise à PP-10001) | tableau de bord (CA 76 000, frais 1 500, panier moyen, taux 100 %, meilleures ventes, stocks bas, espèces chez les livreurs, messages) ; message de contact avec un fixe ; fiche client ; paramètres boutique ; journal d'audit |
 | 2026-10-26 | 6.9 : `pytest` | 130/130 réussis |
 | 2026-10-26 | 6.9 : démonstration réelle via le relais (base de dev, données supprimées, numérotation remise à PP-10001) | adresse au carnet ; échec « reportée » → nouvelle tentative (2) ; échec « injoignable » → 3e tentative refusée ; colis revenu contrôlé 1 bon / 1 fêlé → Retour +1, Perte tracée, paiement annulé ; historique client complet. Le script de nettoyage a d'abord échoué (ordre des suppressions), corrigé puis relancé : base vide |
 | 2026-10-26 | 6.8 : `pytest` | 124/124 réussis |
@@ -141,6 +146,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 6.10 : tableau de bord (F-40), clients (F-45), contact (F-12, F-46), paramètres de la boutique (F-47), journal d'audit (F-49).
+Étape 7 — frontend : 7.1 socle, 7.2 boutique, 7.3 compte client, 7.4 back-office, 7.5 espace livreur ; commit + push à la fin de chaque sous-étape.
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.
