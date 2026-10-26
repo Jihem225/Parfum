@@ -13,6 +13,7 @@ from app.core.csrf import csrf_middleware
 from app.core.db import get_db
 from app.core.errors import install_error_handlers
 from app.modules.auth.router import router as auth_router
+from app.modules.cart.router import router as cart_router
 from app.modules.catalog.products_router import admin as products_admin_router
 from app.modules.catalog.products_router import public as products_router
 from app.modules.catalog.router import admin as catalog_admin_router
@@ -50,6 +51,7 @@ api.include_router(catalog_admin_router)
 api.include_router(products_router)
 api.include_router(products_admin_router)
 api.include_router(stock_admin_router)
+api.include_router(cart_router)
 app.include_router(api)
 
 # Images du stockage local (développement) ; en production elles seront servies par R2.

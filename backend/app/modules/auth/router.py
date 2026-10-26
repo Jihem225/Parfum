@@ -29,6 +29,8 @@ from app.modules.auth.schemas import (
     TotpSetupOut,
     UserOut,
 )
+from app.modules.cart import service as cart_service
+from app.modules.cart.router import CART_COOKIE
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -52,8 +54,12 @@ def _open_session(db: DB, request: Request, response: Response, user: User) -> N
     raw, ttl = service.create_session(
         db, user, user_agent=request.headers.get("user-agent"), ip=client_ip(request)
     )
+    guest_cart = request.cookies.get(CART_COOKIE)
+    cart_service.merge(db, guest_cart, user)  # RG-20 : le panier visiteur rejoint le compte
     db.commit()
     _set_session_cookie(response, raw, ttl)
+    if guest_cart:
+        response.delete_cookie(CART_COOKIE)
 
 
 @router.post("/register", status_code=201)
