@@ -217,3 +217,18 @@ def test_access_rules(
     assert shop.get(f"{API}/courier/deliveries").status_code == 401
     register(shop)
     assert shop.get(f"{API}/courier/deliveries").status_code == 403
+
+
+def test_managers_list_active_couriers(
+    manager: TestClient,
+    moussa: tuple[TestClient, User],
+    db: Session,
+) -> None:
+    m_http, m = moussa
+    gone = make_staff(db, "ancien@exemple.com", UserRole.COURIER)
+    gone.is_active = False
+    db.flush()
+    assert manager.get(f"{API}/admin/couriers").json() == [
+        {"id": m.id, "full_name": "Awa Koné", "phone": "0708123456"}
+    ]
+    assert m_http.get(f"{API}/admin/couriers").status_code == 403

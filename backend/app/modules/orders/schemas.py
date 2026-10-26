@@ -83,6 +83,7 @@ class ReturnIn(BaseModel):
 
 
 class OrderLineOut(BaseModel):
+    variant_id: int  # sert aux retours article par article
     product_name: str
     volume_ml: int
     sku: str

@@ -1,4 +1,4 @@
-import type { FailureReason, Gender, MovementType, OrderStatus, PaymentStatus, Role } from "./types";
+import type { FailureReason, Gender, MovementType, OrderStatus, PaymentStatus, ProductStatus, Role } from "./types";
 
 const fcfa = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -43,6 +43,8 @@ export const PAYMENT_STATUS: Record<PaymentStatus, string> = {
   ANNULE: "Annulé",
   REMBOURSE: "Remboursé",
 };
+
+export const PRODUCT_STATUS: Record<ProductStatus, string> = { DRAFT: "Brouillon", PUBLISHED: "Publié", ARCHIVED: "Archivé" };
 
 export const GENDER: Record<Gender, string> = { FEMME: "Femme", HOMME: "Homme", MIXTE: "Mixte" };
 

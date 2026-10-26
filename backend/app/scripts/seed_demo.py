@@ -4,6 +4,7 @@ Noms, prix, stocks et communes sont FICTIFS. Refusé en production ; sans effet 
 existent déjà."""
 
 import io
+import os
 import sys
 import uuid
 from datetime import UTC, datetime
@@ -12,9 +13,12 @@ from PIL import Image, ImageDraw
 from sqlalchemy import func, select
 
 from app import models  # noqa: F401  (enregistre toutes les tables)
+from app.core import security
 from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.storage import get_storage
+from app.modules.auth.models import User, UserRole
+from app.modules.auth.service import find_by_email
 from app.modules.catalog.models import (
     Collection,
     Gender,
@@ -101,10 +105,40 @@ def bottle(color: tuple[int, int, int]) -> bytes:
     return out.getvalue()
 
 
+def seed_test_staff() -> None:
+    """Comptes de test des parcours E2E, seulement si SEED_STAFF_PASSWORD et
+    SEED_MANAGER_TOTP_SECRET sont fournis (CI) : un Gestionnaire avec double authentification
+    et un livreur."""
+    password = os.environ.get("SEED_STAFF_PASSWORD")
+    secret = os.environ.get("SEED_MANAGER_TOTP_SECRET")
+    if not password or not secret:
+        return
+    with SessionLocal() as db:
+        for email, name, role, totp in (
+            ("gestion-e2e@exemple.com", "Gestion Test", UserRole.MANAGER, secret),
+            ("livreur-e2e@exemple.com", "Livreur Test", UserRole.COURIER, None),
+        ):
+            if find_by_email(db, email):
+                continue
+            db.add(
+                User(
+                    email=email,
+                    password_hash=security.hash_password(password),
+                    full_name=name,
+                    phone="0102030405",
+                    role=role,
+                    totp_secret=security.encrypt(totp) if totp else None,
+                )
+            )
+        db.commit()
+    print("Comptes de test E2E prêts (gestionnaire, livreur).")
+
+
 def main() -> int:
     if settings.app_env == "production":
         print("Refusé : données d'exemple interdites en production.", file=sys.stderr)
         return 1
+    seed_test_staff()
     storage = get_storage()
     with SessionLocal() as db:
         if db.scalar(select(func.count()).select_from(Product)):

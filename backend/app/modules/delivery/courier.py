@@ -9,16 +9,35 @@ from sqlalchemy.orm import Session
 
 from app.core.email import send_email
 from app.core.errors import AppError
-from app.modules.auth.deps import DB, require_roles
+from app.modules.auth.deps import DB, BackOffice, require_roles
 from app.modules.auth.models import User, UserRole
 from app.modules.orders import notify, service
 from app.modules.orders.models import FailureReason, Order, OrderStatus
 
 router = APIRouter(prefix="/courier/deliveries", tags=["livreur"])
+admin = APIRouter(prefix="/admin/couriers", tags=["admin: commandes"])
 
 Deliverer = Annotated[
     User, Depends(require_roles(UserRole.COURIER, UserRole.MANAGER, UserRole.OWNER))
 ]
+
+
+class CourierOut(BaseModel):
+    id: int
+    full_name: str
+    phone: str
+
+
+@admin.get("")
+def active_couriers(_: BackOffice, db: DB) -> list[CourierOut]:
+    """Livreurs actifs, pour l'attribution d'une commande (RG-41). La gestion complète de
+    l'équipe reste réservée au Propriétaire."""
+    couriers = db.scalars(
+        select(User)
+        .where(User.role == UserRole.COURIER, User.is_active.is_(True))
+        .order_by(User.full_name)
+    )
+    return [CourierOut(id=u.id, full_name=u.full_name, phone=u.phone) for u in couriers]
 
 
 class DeliveryItem(BaseModel):

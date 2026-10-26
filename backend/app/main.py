@@ -24,6 +24,7 @@ from app.modules.contact.router import public as contact_router
 from app.modules.customers.admin import admin as customers_admin_router
 from app.modules.customers.router import router as customer_router
 from app.modules.dashboard.router import admin as dashboard_admin_router
+from app.modules.delivery.courier import admin as couriers_admin_router
 from app.modules.delivery.courier import router as courier_router
 from app.modules.delivery.router import admin as communes_admin_router
 from app.modules.delivery.router import public as delivery_router
@@ -71,6 +72,7 @@ api.include_router(communes_admin_router)
 api.include_router(orders_router)
 api.include_router(orders_admin_router)
 api.include_router(courier_router)
+api.include_router(couriers_admin_router)
 api.include_router(cash_admin_router)
 api.include_router(customer_router)
 api.include_router(customers_admin_router)

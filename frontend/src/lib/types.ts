@@ -161,6 +161,7 @@ export type CheckoutPreview = {
   can_order: boolean;
 };
 export type OrderLine = {
+  variant_id: number;
   product_name: string;
   volume_ml: number;
   sku: string;
