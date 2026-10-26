@@ -5,7 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.core import storage
-from app.core.config import Settings
+from app.core.config import Settings, settings
 
 SAFE: dict[str, Any] = {
     "app_env": "production",
@@ -45,8 +45,8 @@ def test_unsafe_production_settings_refuse_to_start(override: dict[str, Any], re
 def test_r2_storage_uploads_with_long_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     client = MagicMock()
     monkeypatch.setattr("boto3.client", lambda *a, **k: client)
-    monkeypatch.setattr(storage.settings, "s3_bucket", "images")
-    monkeypatch.setattr(storage.settings, "s3_public_base_url", "https://images.exemple.ci/")
+    monkeypatch.setattr(settings, "s3_bucket", "images")
+    monkeypatch.setattr(settings, "s3_public_base_url", "https://images.exemple.ci/")
     r2 = storage.S3Storage()
     r2.put("products/1/a.webp", b"x", "image/webp")
     r2.delete("products/1/a.webp")
