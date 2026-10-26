@@ -3,13 +3,13 @@
 from datetime import datetime
 from typing import Annotated, Self
 
-from fastapi import APIRouter, BackgroundTasks, Query, Request
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, StringConstraints, model_validator
 from sqlalchemy import func, select
 
 from app.core import rate_limit
 from app.core.config import settings
-from app.core.email import send_email
+from app.core.email import queue_email
 from app.core.errors import AppError
 from app.core.validators import PersonName, Phone
 from app.modules.auth.deps import DB, BackOffice, client_ip
@@ -57,20 +57,18 @@ class ContactPatch(BaseModel):
 
 
 @public.post("/contact", status_code=201)
-def send_message(
-    data: ContactIn, request: Request, db: DB, background: BackgroundTasks
-) -> MessageOut:
+def send_message(data: ContactIn, request: Request, db: DB) -> MessageOut:
     rate_limit.limit(f"contact:ip:{client_ip(request)}", 5, 3600)
     db.add(ContactMessage(**data.model_dump()))
-    db.commit()
     if settings.shop_notification_email:
         contact = " — ".join(x for x in (data.phone, data.email) if x)
-        background.add_task(
-            send_email,
+        queue_email(
+            db,
             settings.shop_notification_email,
             f"Nouveau message de {data.name}",
             f"{data.name} ({contact}) :\n\n{data.message}",
         )
+    db.commit()
     return MessageOut(message="Merci, votre message est bien arrivé. Nous vous répondons vite.")
 
 

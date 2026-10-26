@@ -1,6 +1,6 @@
 """Importe tous les modèles pour que Base.metadata soit complet (Alembic, tests)."""
 
-from app.core.models import AuditLog, RateLimitHit
+from app.core.models import AuditLog, EmailMessage, RateLimitHit
 from app.modules.auth.models import PasswordResetToken, User, UserSession
 from app.modules.cart.models import Cart, CartItem
 from app.modules.catalog.models import (
@@ -27,6 +27,7 @@ __all__ = [
     "Collection",
     "Commune",
     "ContactMessage",
+    "EmailMessage",
     "OlfactoryFamily",
     "Order",
     "OrderEvent",

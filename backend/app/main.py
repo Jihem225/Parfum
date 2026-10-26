@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.csrf import csrf_middleware
 from app.core.db import get_db
+from app.core.email import send_forever
 from app.core.errors import install_error_handlers
 from app.modules.audit.router import admin as audit_admin_router
 from app.modules.auth.router import router as auth_router
@@ -31,6 +32,7 @@ from app.modules.delivery.courier import admin as couriers_admin_router
 from app.modules.delivery.courier import router as courier_router
 from app.modules.delivery.router import admin as communes_admin_router
 from app.modules.delivery.router import public as delivery_router
+from app.modules.emails.router import admin as emails_admin_router
 from app.modules.inventory.router import admin as stock_admin_router
 from app.modules.orders.jobs import expire_forever
 from app.modules.orders.router import admin as orders_admin_router
@@ -45,11 +47,15 @@ is_prod = settings.app_env == "production"
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    # Les tests appellent la fonction directement, sans boucle de fond.
-    run = settings.payment_provider and settings.app_env != "test"
-    task = asyncio.create_task(expire_forever()) if run else None
+    # Les tests appellent les fonctions directement, sans boucle de fond.
+    jobs = []
+    if settings.app_env != "test":
+        jobs.append(send_forever())
+        if settings.payment_provider:
+            jobs.append(expire_forever())
+    tasks = [asyncio.create_task(job) for job in jobs]
     yield
-    if task:
+    for task in tasks:
         task.cancel()
 
 
@@ -99,6 +105,7 @@ api.include_router(shop_router)
 api.include_router(settings_admin_router)
 api.include_router(dashboard_admin_router)
 api.include_router(audit_admin_router)
+api.include_router(emails_admin_router)
 app.include_router(api)
 
 # Images du stockage local (développement) ; en production elles seront servies par R2.

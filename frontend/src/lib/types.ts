@@ -319,6 +319,7 @@ export type Dashboard = {
   low_stock_variants: number;
   cash_held_by_couriers: number;
   new_contact_messages: number;
+  failed_emails: number;
 };
 export type Customer = {
   id: number;
@@ -338,6 +339,18 @@ export type ContactMessage = {
   email: string | null;
   message: string;
   status: "NOUVEAU" | "TRAITE";
+};
+export type EmailStatus = "PENDING" | "SENT" | "FAILED";
+export type OutboxEmail = {
+  id: number;
+  created_at: string;
+  to_address: string;
+  subject: string;
+  status: EmailStatus;
+  attempts: number;
+  next_attempt_at: string;
+  last_error: string | null;
+  sent_at: string | null;
 };
 export type ShopInfo = {
   name: string;

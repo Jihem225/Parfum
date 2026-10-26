@@ -11,14 +11,14 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import audit
 from app.core.config import settings
-from app.core.email import send_email
+from app.core.email import queue_email
 from app.core.errors import AppError
 from app.modules.catalog.models import Product, ProductVariant
 from app.modules.inventory.models import MovementType, StockMovement
 
 log = logging.getLogger("parfums.stock")
 
-_ALERTS = "stock_alerts"  # clé de Session.info : alertes à envoyer une fois la transaction validée
+_ALERTS = "stock_alerts"  # clé de Session.info : alertes mises en file à la validation
 
 
 def _move(
@@ -259,8 +259,9 @@ def _queue_alert(db: Session, variant_id: int, available: int, threshold: int) -
     )
 
 
-@event.listens_for(Session, "after_commit")
+@event.listens_for(Session, "before_commit")
 def _send_alerts(session: Session) -> None:
+    """Alerte mise en file dans la transaction qui a franchi le seuil (envoyée avec elle)."""
     alerts = session.info.pop(_ALERTS, None)
     if not alerts:
         return
@@ -274,9 +275,8 @@ def _send_alerts(session: Session) -> None:
         f"seuil {a['threshold']}"
         for a in alerts
     ]
-    # shortcut: envoi synchrone après commit (seulement au franchissement d'un seuil) ; passer à
-    # une file d'envoi si les e-mails ralentissent les commandes.
-    send_email(
+    queue_email(
+        session,
         settings.shop_notification_email,
         "Stock bas : " + ", ".join(a["name"] for a in alerts),
         "Ces contenances sont passées au seuil d'alerte ou en dessous :\n\n" + "\n".join(lines),

@@ -87,6 +87,9 @@ Dans la commande : **Retour client et remboursement** (colis revenu après un é
 
 - **Clients** : coordonnées, commandes et total livré par client.
 - **Messages** : formulaire de contact du site ; marquez-les « traité ».
+- **E-mails** : chaque e-mail (commande, suivi, mot de passe, alertes) est réessayé automatiquement pendant environ 4 heures en cas de problème. Au-delà, il passe **En échec** et le tableau de bord l'affiche en rouge.
+  - Lisez l'erreur : adresse du client mal saisie, ou configuration d'envoi (Resend) à vérifier.
+  - Une fois la cause corrigée, **Renvoyer**. Un lien de réinitialisation de mot de passe n'est valable qu'une heure : au-delà, le client refait une demande.
 - **Boutique et livraison** (Propriétaire) :
   - téléphone, WhatsApp, e-mail, adresse et horaires affichés sur le site ;
   - **communes desservies** avec leurs frais et délais. Décochez « Desservie » pour suspendre une commune.

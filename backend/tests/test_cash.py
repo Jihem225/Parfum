@@ -12,6 +12,7 @@ from app.modules.auth.models import User, UserRole
 from app.modules.delivery.models import Commune
 from app.modules.orders.models import Order
 from app.modules.payments.models import Payment
+from tests.conftest import Outbox
 from tests.test_cart import add, perfume, register, shop, vid  # noqa: F401
 from tests.test_orders import checkout, cocody, mails, stock  # noqa: F401
 from tests.test_products import taxons  # noqa: F401
@@ -97,7 +98,7 @@ def test_courier_sees_and_closes_only_own_deliveries(
     moussa: tuple[TestClient, User],
     ibrahim: tuple[TestClient, User],
     db: Session,
-    mails: list[tuple[str, str, str]],  # noqa: F811
+    mails: Outbox,  # noqa: F811
 ) -> None:
     (m_http, m), (i_http, i) = moussa, ibrahim
     mine = shipped(shop, manager, cocody, m, vid(perfume), 2)

@@ -15,6 +15,7 @@ export async function placeOrder(page: Page, { paid = false } = {}): Promise<str
     data: {
       customer_name: "Client Parcours",
       phone: "0708123456",
+      email: "client-parcours@exemple.com",
       commune_id: communes[0].id,
       address_line: "Riviera 3, villa 12",
       accept_terms: true,

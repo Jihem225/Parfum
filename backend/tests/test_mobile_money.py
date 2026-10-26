@@ -15,6 +15,7 @@ from app.modules.orders import service
 from app.modules.orders.models import EventKind, Order, OrderEvent
 from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.payments.providers import sign
+from tests.conftest import Outbox
 from tests.test_cart import add, perfume, register, shop, vid  # noqa: F401
 from tests.test_cash import deliver, moussa  # noqa: F401
 from tests.test_orders import checkout, cocody, mails, stock  # noqa: F401
@@ -62,7 +63,7 @@ def test_paid_order_is_confirmed_without_a_call(
     perfume: dict[str, Any],  # noqa: F811
     cocody: Commune,  # noqa: F811
     db: Session,
-    mails: list[tuple[str, str, str]],  # noqa: F811
+    mails: Outbox,  # noqa: F811
 ) -> None:
     add(shop, vid(perfume))
     order = checkout(shop, cocody, **MOBILE).json()
@@ -130,7 +131,7 @@ def test_unpaid_order_expires_then_late_payment_is_refunded(
     perfume: dict[str, Any],  # noqa: F811
     cocody: Commune,  # noqa: F811
     db: Session,
-    mails: list[tuple[str, str, str]],  # noqa: F811
+    mails: Outbox,  # noqa: F811
 ) -> None:
     add(shop, vid(perfume), 2)
     order = checkout(shop, cocody, **MOBILE).json()

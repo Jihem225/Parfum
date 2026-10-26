@@ -45,6 +45,12 @@ export default function DashboardPage() {
       {error && <Alert>{errorMessage(error)}</Alert>}
       {d && (
         <>
+          {d.failed_emails > 0 && (
+            <Alert>
+              {d.failed_emails} e-mail{d.failed_emails > 1 ? "s n'ont" : " n'a"} pas pu être envoyé{d.failed_emails > 1 ? "s" : ""}.{" "}
+              <Link href="/admin/emails" className="font-semibold underline">Voir et renvoyer</Link>
+            </Alert>
+          )}
           <p className="text-sm text-encre-douce">Période du {d.date_from} au {d.date_to} (30 derniers jours par défaut).</p>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Kpi label="Chiffre d'affaires encaissé" value={formatFCFA(d.revenue)} />

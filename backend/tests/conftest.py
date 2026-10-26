@@ -1,7 +1,8 @@
 import os
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
+from typing import overload
 
 import pytest
 
@@ -20,11 +21,12 @@ os.environ["MEDIA_DIR"] = tempfile.mkdtemp(prefix="parfums-media-")
 
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+from sqlalchemy import select, text  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from alembic import command  # noqa: E402
 from app.core.db import engine, get_db  # noqa: E402
+from app.core.models import EmailMessage  # noqa: E402
 from app.main import app  # noqa: E402
 
 
@@ -98,3 +100,37 @@ def manager(client: TestClient, db: Session) -> TestClient:
     )
     assert response.status_code == 200
     return client
+
+
+class Outbox(Sequence[tuple[str, str, str]]):
+    """E-mails mis en file dans la transaction du test, relus à chaque accès :
+    (destinataire, objet, texte), dans l'ordre de création."""
+
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def _all(self) -> list[tuple[str, str, str]]:
+        rows = self.db.scalars(select(EmailMessage).order_by(EmailMessage.id))
+        return [(m.to_address, m.subject, m.body) for m in rows]
+
+    @overload
+    def __getitem__(self, index: int) -> tuple[str, str, str]: ...
+    @overload
+    def __getitem__(self, index: slice) -> Sequence[tuple[str, str, str]]: ...
+    def __getitem__(
+        self, index: int | slice
+    ) -> tuple[str, str, str] | Sequence[tuple[str, str, str]]:
+        return self._all()[index]
+
+    def __len__(self) -> int:
+        return len(self._all())
+
+    def __eq__(self, other: object) -> bool:
+        return self._all() == other
+
+    __hash__ = None  # type: ignore[assignment]
+
+
+@pytest.fixture
+def outbox(db: Session) -> Outbox:
+    return Outbox(db)

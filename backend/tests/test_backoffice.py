@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.models import AuditLog
 from app.modules.auth.models import User
-from app.modules.contact import router as contact_router
 from app.modules.delivery.models import Commune
+from tests.conftest import Outbox
 from tests.test_cart import add, perfume, register, shop, vid  # noqa: F401
 from tests.test_cash import deliver, moussa, shipped  # noqa: F401
 from tests.test_delivery import fail, owner  # noqa: F401
@@ -78,9 +78,9 @@ def test_contact_messages(
     shop: TestClient,  # noqa: F811
     manager: TestClient,
     monkeypatch: pytest.MonkeyPatch,
+    outbox: Outbox,
 ) -> None:
-    sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr(contact_router, "send_email", lambda *a: sent.append(a))
+    sent = outbox
     monkeypatch.setattr(settings, "shop_notification_email", "shop@ex.com")
     r = shop.post(f"{API}/contact", json={"name": "Aya", "message": "Bonjour, une question."})
     assert r.json()["error"]["details"][0]["message"] == (

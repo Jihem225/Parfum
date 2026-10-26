@@ -1,10 +1,9 @@
 """E-mails de commande (§3.5) : au client s'il a donné un e-mail, à la boutique pour les
-nouvelles commandes. Envoyés après validation de la transaction."""
+nouvelles commandes. Mis en file dans la transaction de l'action (app/core/email.py)."""
 
 from app.core.config import settings
+from app.core.email import Message
 from app.modules.orders.models import Order, OrderItem, OrderStatus
-
-Message = tuple[str, str, str]  # destinataire, objet, texte
 
 
 def fcfa(amount: int) -> str:

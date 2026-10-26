@@ -19,6 +19,7 @@ from app.modules.catalog.models import (
 )
 from app.modules.inventory import service
 from app.modules.inventory.models import StockMovement
+from tests.conftest import Outbox
 
 ADMIN = "/api/v1/admin"
 STOCK = f"{ADMIN}/stock"
@@ -147,10 +148,9 @@ def test_low_stock_list(manager: TestClient, db: Session) -> None:
 
 
 def test_crossing_the_threshold_sends_one_email(
-    manager: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+    manager: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch, outbox: Outbox
 ) -> None:
-    sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr(service, "send_email", lambda *a: sent.append(a))
+    sent = outbox
     monkeypatch.setattr(settings, "shop_notification_email", "boutique@exemple.com")
     [v] = variants(manager, 7)
 

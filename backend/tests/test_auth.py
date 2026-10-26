@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.validators import normalize_ci_phone
 from app.modules.auth.models import PasswordResetToken, User, UserSession
+from tests.conftest import Outbox
 
 API = "/api/v1/auth"
 NEW_CUSTOMER = {
@@ -151,10 +152,9 @@ def test_expired_session_is_refused(client: TestClient, db: Session) -> None:
 
 
 def test_forgot_password_answers_the_same_for_unknown_email(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
+    client: TestClient, outbox: Outbox
 ) -> None:
-    sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr("app.modules.auth.router.send_email", lambda *a: sent.append(a))
+    sent = outbox
     register(client)
     known = client.post(f"{API}/forgot-password", json={"email": "aya@exemple.com"})
     unknown = client.post(f"{API}/forgot-password", json={"email": "x@exemple.com"})
@@ -163,11 +163,8 @@ def test_forgot_password_answers_the_same_for_unknown_email(
     assert len(sent) == 1 and sent[0][0] == "aya@exemple.com"
 
 
-def test_reset_password_flow(
-    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr("app.modules.auth.router.send_email", lambda *a: sent.append(a))
+def test_reset_password_flow(client: TestClient, db: Session, outbox: Outbox) -> None:
+    sent = outbox
     register(client)
     client.post(f"{API}/forgot-password", json={"email": "aya@exemple.com"})
     token = sent[0][2].split("token=")[1].split()[0]
@@ -185,11 +182,8 @@ def test_reset_password_flow(
     assert reused.json()["error"]["code"] == "INVALID_TOKEN"  # usage unique
 
 
-def test_expired_reset_link_is_refused(
-    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    sent: list[tuple[str, str, str]] = []
-    monkeypatch.setattr("app.modules.auth.router.send_email", lambda *a: sent.append(a))
+def test_expired_reset_link_is_refused(client: TestClient, db: Session, outbox: Outbox) -> None:
+    sent = outbox
     register(client)
     client.post(f"{API}/forgot-password", json={"email": "aya@exemple.com"})
     db.execute(

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from fastapi.concurrency import run_in_threadpool
 
 from app.core.db import SessionLocal
-from app.core.email import send_email
+from app.core.email import queue
 from app.modules.orders import notify, service
 
 log = logging.getLogger("parfums.jobs")
@@ -16,10 +16,8 @@ log = logging.getLogger("parfums.jobs")
 def expire_once() -> int:
     with SessionLocal() as db:
         expired = service.expire_unpaid(db, datetime.now(UTC))
+        queue(db, *(notify.to_customer(order) for order in expired))
         db.commit()
-    for order in expired:
-        if message := notify.to_customer(order):
-            send_email(*message)
     return len(expired)
 
 

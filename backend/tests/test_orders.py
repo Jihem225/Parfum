@@ -24,14 +24,13 @@ from app.modules.catalog.models import (
     ProductStatus,
     ProductVariant,
 )
-from app.modules.delivery import courier
 from app.modules.delivery.models import Commune
 from app.modules.inventory.models import StockMovement
-from app.modules.orders import router as orders_router
 from app.modules.orders import service
 from app.modules.orders.models import Order, OrderEvent, OrderItem
 from app.modules.orders.schemas import CheckoutIn
 from app.modules.payments.models import Payment
+from tests.conftest import Outbox
 from tests.test_cart import add, perfume, register, shop, vid  # noqa: F401
 from tests.test_products import ADMIN, set_stock, taxons  # noqa: F401
 from tests.test_staff import login_owner_with_totp, make_staff
@@ -48,12 +47,9 @@ def cocody(db: Session) -> Commune:
 
 
 @pytest.fixture
-def mails(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str, str]]:
-    sent: list[tuple[str, str, str]] = []
-    for module in (orders_router, courier):
-        monkeypatch.setattr(module, "send_email", lambda *a: sent.append(a))
+def mails(outbox: Outbox, monkeypatch: pytest.MonkeyPatch) -> Outbox:
     monkeypatch.setattr(settings, "shop_notification_email", "shop@ex.com")
-    return sent
+    return outbox
 
 
 def checkout(shop: TestClient, commune: Commune, **overrides: Any) -> Any:  # noqa: F811
@@ -124,7 +120,7 @@ def test_guest_order(
     perfume: dict[str, Any],  # noqa: F811
     cocody: Commune,
     db: Session,
-    mails: list[tuple[str, str, str]],
+    mails: Outbox,
 ) -> None:
     add(shop, vid(perfume), 2)
     add(shop, vid(perfume, 1), 1)
@@ -289,7 +285,7 @@ def test_customer_orders_and_cancels(
     perfume: dict[str, Any],  # noqa: F811
     cocody: Commune,
     db: Session,
-    mails: list[tuple[str, str, str]],
+    mails: Outbox,
 ) -> None:
     register(shop)
     add(shop, vid(perfume), 2)
@@ -325,7 +321,7 @@ def test_order_processing(
     perfume: dict[str, Any],  # noqa: F811
     cocody: Commune,
     db: Session,
-    mails: list[tuple[str, str, str]],
+    mails: Outbox,
 ) -> None:
     add(shop, vid(perfume), 2)
     number = checkout(shop, cocody).json()["number"]

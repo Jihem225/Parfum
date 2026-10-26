@@ -21,6 +21,7 @@ const NAV: [string, string, boolean][] = [
   ["/admin/encaissements", "Encaissements", false],
   ["/admin/clients", "Clients", false],
   ["/admin/messages", "Messages", false],
+  ["/admin/emails", "E-mails", false],
   ["/admin/parametres", "Boutique et livraison", true],
   ["/admin/equipe", "Collaborateurs", true],
   ["/admin/journal", "Journal d'audit", true],

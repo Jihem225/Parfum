@@ -25,7 +25,7 @@ Choix structurants :
 1. **Le navigateur ne parle qu'au frontend.** Next.js relaie `/api/v1/*` vers FastAPI (réécriture). Conséquences : une seule origine, cookies `httpOnly` sans configuration CORS, l'URL du backend n'est jamais exposée.
 2. **Rendu serveur pour ce qui doit être référencé** (accueil, catalogue, collections, fiches produits, pages de contenu) : les composants serveur Next.js appellent FastAPI directement par l'URL interne, avec un cache de 60 s (revalidation). **Rendu client** (TanStack Query) pour ce qui est personnel : panier, commande, espace client, back-office, espace livreur.
 3. **Toutes les règles métier vivent dans FastAPI.** Le frontend affiche et pré-valide ; le serveur décide.
-4. **Pas de Redis, pas de file de tâches au MVP.** Limitation de débit stockée dans PostgreSQL, e-mails envoyés après validation de la transaction (tâche d'arrière-plan FastAPI). Volume visé : moins de 50 commandes par jour.
+4. **Pas de Redis, pas de file de tâches au MVP.** Limitation de débit stockée dans PostgreSQL, e-mails écrits dans une table d'envoi (`email_outbox`) avec l'action qui les déclenche, puis envoyés par une tâche de fond du processus de l'API (étape 12). Volume visé : moins de 50 commandes par jour.
 
 ---
 
@@ -209,7 +209,7 @@ L'adresse et les articles sont **recopiés** dans la commande (RG-26) : modifier
 | `inventory` | fusionnée | stock porté par `product_variants` |
 | `shipments` | fusionnée | une livraison par commande ; tentatives dans `order_events` |
 | `promotions`, `promotion_usages`, `reviews`, `wishlists` | reportées | hors MVP |
-| `notifications` | reportée | e-mails non persistés au MVP ; l'historique de la commande fait foi |
+| `notifications` | remplacée | file d'envoi `email_outbox` (étape 12) ; l'historique de la commande fait foi |
 
 ---
 
@@ -340,8 +340,11 @@ Le jeton `token` (HMAC du numéro avec `SECRET_KEY`) est remis à l'acheteur ave
 
 ## 8. E-mails, journaux, observabilité
 
-- **E-mails** : Resend, via son API HTTP (pas de SDK supplémentaire). En développement, les e-mails sont affichés dans la console. Envoi après validation de la transaction ; un échec d'envoi est journalisé sans bloquer la commande.
-  *shortcut : pas de file de réessai ; à ajouter (table d'envoi + tâche planifiée) si des pertes d'e-mails sont constatées.*
+- **E-mails** : Resend, via son API HTTP (pas de SDK supplémentaire). En développement, sans clé, ils sont affichés dans la console.
+  - **File d'envoi** (`app/core/email.py`, table `email_outbox`, étape 12) : `queue_email` écrit l'e-mail **dans la transaction de l'action** (commande, paiement, alerte de stock…). Action annulée = pas d'e-mail ; e-mail jamais perdu si l'envoi échoue.
+  - Une tâche de fond de l'API envoie toutes les 5 secondes ce qui est arrivé à échéance, un message par transaction avec `FOR UPDATE SKIP LOCKED` (plusieurs processus possibles sans double envoi).
+  - Échec temporaire (réseau, 5xx, 429) : nouvel essai après 1, 5, 15, 60 puis 180 minutes ; après le 6e essai, ou tout de suite pour un refus définitif (4xx, clé absente en production), statut **FAILED**, visible au tableau de bord et dans **E-mails** du back-office (`GET /admin/emails`, `POST /admin/emails/{id}/retry`, renvoi tracé dans le journal d'audit).
+  - Une fois envoyé, le texte est effacé (liens de réinitialisation à usage unique) ; la ligne (destinataire, objet, date) est supprimée après 30 jours.
 - **Journaux** : sortie texte standard d'uvicorn et des modules (format JSON et identifiant par requête non réalisés au MVP) ; aucun mot de passe ni jeton journalisé.
 - **Erreurs** : prévu avec Sentry ; **non intégré au MVP** (étape 9) : journaux et notifications Render. À ajouter si les erreurs passent inaperçues.
 - **Santé** : `/api/v1/health` vérifie la connexion à la base ; utilisé par l'hébergeur pour redémarrer un service défaillant.

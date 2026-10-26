@@ -2,12 +2,12 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.email import send_email
+from app.core.email import queue
 from app.core.errors import AppError
 from app.modules.auth.deps import DB, BackOffice, require_roles
 from app.modules.auth.models import User, UserRole
@@ -113,13 +113,9 @@ def mark_failed(number: str, data: FailedIn, user: Deliverer, db: DB) -> Deliver
 
 
 @router.post("/{number}/delivered")
-def mark_delivered(
-    number: str, data: DeliveredIn, user: Deliverer, db: DB, background: BackgroundTasks
-) -> DeliveryOut:
+def mark_delivered(number: str, data: DeliveredIn, user: Deliverer, db: DB) -> DeliveryOut:
     order = _assigned(db, user, number)
     service.deliver(db, order, data.amount_collected, actor_id=user.id)
+    queue(db, notify.to_customer(order))
     db.commit()
-    message = notify.to_customer(order)
-    if message is not None:
-        background.add_task(send_email, *message)
     return _out(db, order)

@@ -54,6 +54,7 @@
 | Frontend Vitest | 11/11 réussis |
 | Parcours E2E Playwright (mobile + ordinateur) | 18/18 réussis |
 | Lint, typage strict (mypy, TypeScript), build | OK |
+| File d'envoi des e-mails (étape 12, local) | backend 164/164 (dont 8 sur la file : transaction, nouveaux essais, abandon, refus, purge, renvoi), Vitest 12/12, E2E 24/24 (e-mail envoyé par la tâche de fond et visible au back-office) |
 | Mobile money (étape 11, local, commit 2c6d568) | backend 156/156, Vitest 12/12, E2E 24/24 (dont 3 parcours mobile money × 2 appareils), avec le prestataire de simulation |
 | Non exécutés | paiement avec un vrai prestataire (pas encore choisi) ; écran de retour / remboursement dans le navigateur (couvert en API) ; vrai téléphone et Safari ; charge ; services réels R2, Resend et Render (comptes à créer) |
 
@@ -64,7 +65,7 @@
 - **Hors MVP** : avis, favoris, codes promo, bannières, newsletter, paniers abandonnés, permissions fines, multi-pays.
 - **Exploitation** :
   - pas de Sentry ni de journaux JSON : journaux et notifications de Render uniquement ;
-  - e-mails sans file de réessai : un échec est journalisé, l'e-mail est perdu ;
+  - e-mails : file d'envoi avec nouveaux essais depuis l'étape 12 ; la tâche d'envoi tourne dans le processus de l'API (un redémarrage la relance, rien n'est perdu) ;
   - images R2 sans sauvegarde séparée.
 - **Sécurité réseau** :
   - la base de production accepte les connexions externes (TLS + mot de passe généré) pour la sauvegarde ;
@@ -92,6 +93,5 @@
 **Évolutions suggérées, par ordre d'utilité :**
 1. Brancher le prestataire de mobile money (`docs/09-deploiement.md` §9).
 2. Sentry.
-3. File de réessai des e-mails.
-4. Codes promo.
-5. Préproduction quand l'équipe grandit.
+3. Codes promo.
+4. Préproduction quand l'équipe grandit.

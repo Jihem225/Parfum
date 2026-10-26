@@ -43,6 +43,11 @@ test("commande payée par mobile money : confirmée sans appel, rien à encaisse
   await admin.goto("/admin/encaissements");
   await expect(admin.getByText(/Aucun livreur ne détient|à remettre/).first()).toBeVisible(); // données chargées
   await expect(admin.getByRole("link", { name: new RegExp(number) })).toHaveCount(0); // aucune espèce
+
+  // E-mails : écrits avec la commande, envoyés par la tâche de fond de l'API (console en local).
+  await admin.goto("/admin/emails");
+  await admin.getByRole("button", { name: "Envoyés" }).click();
+  await expect(admin.getByText(`Commande ${number} confirmée`)).toBeVisible({ timeout: 15_000 });
 });
 
 test("commande traitée, livrée, encaissée puis remise en caisse", async ({ browser }) => {

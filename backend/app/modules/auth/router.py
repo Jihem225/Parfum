@@ -1,12 +1,12 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 
 from app.core import rate_limit, security
 from app.core.audit import audit
 from app.core.config import settings
-from app.core.email import send_email
+from app.core.email import queue_email
 from app.core.errors import AppError
 from app.modules.auth import service
 from app.modules.auth.deps import (
@@ -105,24 +105,22 @@ def me(user: CurrentUser) -> UserOut:
 
 
 @router.post("/forgot-password", status_code=202)
-def forgot_password(
-    data: ForgotPasswordIn, request: Request, db: DB, background: BackgroundTasks
-) -> MessageOut:
+def forgot_password(data: ForgotPasswordIn, request: Request, db: DB) -> MessageOut:
     rate_limit.limit(f"forgot:ip:{client_ip(request)}", 10, HOUR)
     rate_limit.limit(f"forgot:email:{data.email}", 3, HOUR)
     started = service.start_password_reset(db, data.email)
     if started:
         user, raw = started
-        db.commit()
         link = f"{settings.frontend_origin}/compte/reinitialiser?token={raw}"
-        background.add_task(
-            send_email,
+        queue_email(
+            db,
             user.email,
             "Réinitialisation de votre mot de passe",
             f"Bonjour {user.full_name},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien "
             f"(valable 1 heure) :\n{link}\n\nSi vous n'êtes pas à l'origine de cette demande, "
             "ignorez ce message.",
         )
+        db.commit()
     # Même réponse que le compte existe ou non : pas d'énumération des e-mails.
     return MessageOut(message="Si un compte existe pour cet e-mail, un lien vient d'être envoyé.")
 

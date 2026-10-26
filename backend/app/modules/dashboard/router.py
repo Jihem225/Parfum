@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import and_, func, select
 
 from app.core.errors import AppError
+from app.core.models import EmailMessage, EmailStatus
 from app.modules.auth.deps import DB, BackOffice
 from app.modules.catalog.models import ProductVariant
 from app.modules.contact.models import ContactMessage, MessageStatus
@@ -48,6 +49,7 @@ class DashboardOut(BaseModel):
     low_stock_variants: int
     cash_held_by_couriers: int
     new_contact_messages: int
+    failed_emails: int  # abandonnés après le dernier essai : à renvoyer
 
 
 @admin.get("")
@@ -131,6 +133,7 @@ def dashboard(
         )
     )
     messages = db.scalar(select(func.count()).where(ContactMessage.status == MessageStatus.NOUVEAU))
+    failed = db.scalar(select(func.count()).where(EmailMessage.status == EmailStatus.FAILED))
     return DashboardOut(
         date_from=date_from,
         date_to=date_to,
@@ -150,4 +153,5 @@ def dashboard(
         low_stock_variants=low or 0,
         cash_held_by_couriers=cash or 0,
         new_contact_messages=messages or 0,
+        failed_emails=failed or 0,
     )

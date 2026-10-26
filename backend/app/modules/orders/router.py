@@ -4,13 +4,13 @@ from datetime import date, datetime, time, timedelta
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, BackgroundTasks, Query, Request
+from fastapi import APIRouter, Query, Request
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from app.core import rate_limit
 from app.core.config import settings
-from app.core.email import send_email
+from app.core.email import queue
 from app.core.errors import AppError
 from app.modules.auth.deps import DB, BackOffice, CurrentUser, Owner, client_ip
 from app.modules.auth.models import User, UserRole
@@ -119,12 +119,6 @@ def summaries(db: Session, user_id: int) -> list[OrderSummary]:
     ]
 
 
-def _send(background: BackgroundTasks, *messages: notify.Message | None) -> None:
-    for message in messages:
-        if message is not None:
-            background.add_task(send_email, *message)
-
-
 # --- Boutique ------------------------------------------------------------------------------------
 
 
@@ -148,19 +142,15 @@ def preview_order(data: PreviewIn, request: Request, user: OptionalUser, db: DB)
 
 
 @public.post("/orders", status_code=201)
-def place_order(
-    data: CheckoutIn, request: Request, user: OptionalUser, db: DB, background: BackgroundTasks
-) -> OrderOut:
+def place_order(data: CheckoutIn, request: Request, user: OptionalUser, db: DB) -> OrderOut:
     rate_limit.limit(f"order:ip:{client_ip(request)}", 10, HOUR)  # RG-51
     cart = cart_service.find(db, user, request.cookies.get(CART_COOKIE))
     order, created = service.checkout(db, data, cart=cart, user=user)
-    db.commit()
     if (
         created and order.status == OrderStatus.EN_ATTENTE_CONFIRMATION
     ):  # mobile money : au paiement
-        _send(
-            background, notify.to_customer(order), notify.to_shop(order, service.items(db, order))
-        )
+        queue(db, notify.to_customer(order), notify.to_shop(order, service.items(db, order)))
+    db.commit()
     return _out(db, order, can_cancel=user is not None and order.user_id == user.id)
 
 
@@ -196,9 +186,7 @@ def my_order(number: str, user: CurrentUser, db: DB) -> OrderOut:
 
 
 @public.post("/me/orders/{number}/cancel")
-def cancel_my_order(
-    number: str, data: CancelIn, user: CurrentUser, db: DB, background: BackgroundTasks
-) -> OrderOut:
+def cancel_my_order(number: str, data: CancelIn, user: CurrentUser, db: DB) -> OrderOut:
     """RG-32 : possible tant que la commande n'est pas partie en livraison."""
     order = _mine(db, user, number, lock=True)
     if order.status not in service.CANCELLABLE:
@@ -212,8 +200,8 @@ def cancel_my_order(
         actor_id=user.id,
         note=data.reason or "Annulée par le client",
     )
+    queue(db, notify.to_customer(order))
     db.commit()
-    _send(background, notify.to_customer(order))
     return _out(db, order, can_cancel=True)
 
 
@@ -241,33 +229,29 @@ def payment_state(number: str, token: str, db: DB) -> PaymentState:
     return PaymentState(order_status=order.status, payment_status=service.payment(db, order).status)
 
 
-def _notified(db: DB, body: bytes, headers: dict[str, str], background: BackgroundTasks) -> None:
+def _notified(db: DB, body: bytes, headers: dict[str, str]) -> None:
     provider = get_provider()
     if provider is None:
         raise AppError(404, "NOT_FOUND", "Paiement en ligne désactivé.")
     order, recorded = service.apply_notification(db, provider.read(body, headers))
-    db.commit()
     if recorded and order.status == OrderStatus.CONFIRMEE:
         items = service.items(db, order)
-        _send(background, notify.to_customer(order), notify.to_shop(order, items, prepaid=True))
+        queue(db, notify.to_customer(order), notify.to_shop(order, items, prepaid=True))
     elif recorded:
-        _send(background, notify.late_payment(order))
+        queue(db, notify.late_payment(order))
+    db.commit()
 
 
 @public.post("/payments/notifications")
-async def payment_notification(
-    request: Request, db: DB, background: BackgroundTasks
-) -> dict[str, bool]:
+async def payment_notification(request: Request, db: DB) -> dict[str, bool]:
     """Avis du prestataire (sans cookie : exempté du CSRF, authentifié par sa signature calculée
     sur les octets bruts)."""
-    _notified(db, await request.body(), dict(request.headers), background)
+    _notified(db, await request.body(), dict(request.headers))
     return {"received": True}
 
 
 @public.post("/payments/simulation/{number}")
-def simulate_payment(
-    number: str, data: SimulatedPayment, db: DB, background: BackgroundTasks
-) -> PaymentState:
+def simulate_payment(number: str, data: SimulatedPayment, db: DB) -> PaymentState:
     """Développement et CI uniquement : produit l'avis signé qu'enverrait un prestataire."""
     if settings.payment_provider != "simulation":
         raise AppError(404, "NOT_FOUND", "Simulation désactivée.")
@@ -283,7 +267,7 @@ def simulate_payment(
             "status": "paid" if data.paid else "failed",
         }
     ).encode()
-    _notified(db, body, {"x-signature": sign(body)}, background)
+    _notified(db, body, {"x-signature": sign(body)})
     return PaymentState(order_status=order.status, payment_status=service.payment(db, order).status)
 
 
@@ -403,31 +387,27 @@ def get_order(number: str, _: BackOffice, db: DB) -> AdminOrderOut:
 
 
 @admin.post("/{number}/calls", status_code=201)
-def add_call(
-    number: str, data: CallIn, user: BackOffice, db: DB, background: BackgroundTasks
-) -> AdminOrderOut:
+def add_call(number: str, data: CallIn, user: BackOffice, db: DB) -> AdminOrderOut:
     order = service.locked(db, number)
     before = order.status
     service.record_call(db, order, data.result, data.note, actor_id=user.id)
-    db.commit()
     if order.status != before:
-        _send(background, notify.to_customer(order))
+        queue(db, notify.to_customer(order))
+    db.commit()
     return _admin_out(db, order)
 
 
 @admin.post("/{number}/transition")
-def change_status(
-    number: str, data: TransitionIn, user: BackOffice, db: DB, background: BackgroundTasks
-) -> AdminOrderOut:
+def change_status(number: str, data: TransitionIn, user: BackOffice, db: DB) -> AdminOrderOut:
     if data.to == OrderStatus.ANNULEE and not data.note:
         raise AppError(422, "REASON_REQUIRED", "Indiquez le motif de l'annulation.")
     order = service.locked(db, number)
     service.transition(
         db, order, data.to, actor_id=user.id, note=data.note, courier_id=data.courier_id
     )
-    db.commit()
     prepaid = service.payment(db, order).method == PaymentMethod.MOBILE_MONEY
-    _send(background, notify.to_customer(order, prepaid=prepaid))
+    queue(db, notify.to_customer(order, prepaid=prepaid))
+    db.commit()
     return _admin_out(db, order)
 
 
