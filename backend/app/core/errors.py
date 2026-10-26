@@ -28,15 +28,31 @@ _VALIDATION_MESSAGES = {
     "missing": "Champ obligatoire.",
     "string_too_short": "Trop court : {min_length} caractères minimum.",
     "string_too_long": "Trop long : {max_length} caractères maximum.",
+    "string_pattern_mismatch": "Format invalide.",
+    "string_type": "Texte attendu.",
+    "int_parsing": "Nombre entier attendu.",
+    "int_type": "Nombre entier attendu.",
+    "int_from_float": "Nombre entier attendu.",
+    "bool_parsing": "Oui ou non attendu.",
+    "bool_type": "Oui ou non attendu.",
+    "greater_than": "Doit être supérieur à {gt}.",
+    "greater_than_equal": "Doit être supérieur ou égal à {ge}.",
+    "less_than": "Doit être inférieur à {lt}.",
+    "less_than_equal": "Doit être inférieur ou égal à {le}.",
+    "literal_error": "Valeur non autorisée.",
+    "enum": "Valeur non autorisée.",
+    "json_invalid": "Requête mal formée.",
 }
 
 
 def _field_message(err: dict[str, Any]) -> str:
     ctx = err.get("ctx") or {}
     if err["type"] == "value_error" and "error" in ctx:
-        return str(ctx["error"])
+        return str(ctx["error"])  # nos propres messages, déjà en français
+    if err["type"] == "value_error" and "reason" in ctx:
+        return "Adresse e-mail invalide."  # seul EmailStr renseigne « reason »
     template = _VALIDATION_MESSAGES.get(err["type"])
-    return template.format(**ctx) if template else str(err["msg"])
+    return template.format(**ctx) if template else "Valeur invalide."
 
 
 def install_error_handlers(app: FastAPI) -> None:

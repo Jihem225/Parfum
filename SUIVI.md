@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.7 — Backend : commandes (avec communes et frais de livraison avancés depuis 6.9)** : en cours.
+**Étape 6.8 — Backend : encaissements** : en cours.
+
+- Étape 6.7 — Commandes (avec communes desservies) : **validée le 2026-10-26** ; ordre 6.8 puis 6.9 conservé.
 
 - Étape 6.6 — Panier : **validée le 2026-10-26**, avec la proposition d'avancer les communes desservies (frais, délais) dans 6.7.
 
@@ -79,6 +81,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/core/{storage,images}.py`, `backend/app/modules/catalog/{products,queries,products_router}.py`, `backend/tests/test_products.py` — produits, contenances, images, catalogue public (6.4, commité)
 - `backend/app/modules/inventory/{service,schemas,router}.py`, `backend/tests/test_stock.py` — stock : entrées, ajustements, historique, alertes de seuil, fonctions atomiques réserver / libérer / sortir / retour / perte (6.5, commité)
 - `backend/app/modules/cart/{service,schemas,router}.py`, fusion à la connexion dans `auth/router.py`, `backend/tests/test_cart.py` — panier visiteur (cookie) et client, fusion, contrôles 5 unités / disponible / publié, plafond 300 000 FCFA (6.6, commité)
+- `backend/app/modules/delivery/{schemas,router}.py` (communes), `backend/app/modules/orders/{schemas,service,notify,router}.py`, `backend/app/core/errors.py` (messages de validation en français), `backend/tests/test_orders.py` — commandes (6.7, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -105,6 +108,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 6.3 : appels réels via le relais | listes publiques 200, collection inconnue 404, écriture anonyme 401 |
 | 2026-10-26 | CI GitHub (commit 6.3) | backend, frontend, e2e : verts |
 | 2026-10-26 | 6.4 : `pytest` | 75/75 réussis |
+| 2026-10-26 | 6.7 : `pytest` | 118/118 réussis (dont 8 validations simultanées de la dernière unité : 1 commande, 7 refus ; relancé 5 fois) |
+| 2026-10-26 | 6.7 : démonstration réelle via le relais (base de dev, données supprimées, numérotation remise à PP-10001) | total périmé → 409 avec nouveau total ; commande invité PP-10001, panier vidé ; double envoi → même commande ; stock réservé 2 ; suivi invité OK / mauvais téléphone 404 ; appel confirmé → Confirmée ; En livraison refusée sans livreur puis acceptée → sortie de stock ; annulation en route refusée ; e-mails client et boutique (console) |
 | 2026-10-26 | 6.6 : `pytest` | 98/98 réussis |
 | 2026-10-26 | 6.6 : démonstration réelle via le relais (base de dev, données supprimées ensuite) | cookie panier HttpOnly 90 j ; 2+2 sur un stock de 3 → 409 « max 3 » ; prix modifié → panier à jour ; création de compte → panier conservé ; parfum dépublié → ligne « indisponible », commande bloquée |
 | 2026-10-26 | 6.5 : `pytest` | 89/89 réussis (dont 12 commandes simultanées sur le dernier flacon : 1 réussite, 11 refus ; relancé 5 fois) |
@@ -126,6 +131,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 6.7 : commandes (validation avec réservation atomique, copie figée, numéro PP-xxxxx, transitions de statut, suivi invité, e-mail à la boutique, contrôle du changement de prix avant confirmation). Les communes et frais de livraison (6.9) seront nécessaires : proposer de les avancer dans 6.7.
+Étape 6.8 : encaissements (statuts de paiement, encaissement à la livraison, remise de caisse par livreur avec écart figé, remboursement). Ensuite 6.9 : espace livreur (mes livraisons, livrée et encaissée / échec avec motif, 2 tentatives max, retour à la boutique avec contrôle Retour/Perte), retour d'une commande livrée (Propriétaire), profil et adresses client.
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "Projet Parfums <no-reply@example.com>"
     shop_notification_email: str = ""  # destinataire des alertes (stock bas, nouvelles commandes)
+    order_number_prefix: str = "PP"  # provisoire (RG-28)
     media_dir: str = "media"  # stockage local des images (développement)
     media_base_url: str = "/media"
 

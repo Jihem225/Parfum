@@ -1,6 +1,6 @@
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -10,13 +10,12 @@ from app.core.audit import audit
 from app.core.errors import AppError
 from app.core.validators import Password, PersonName, Phone
 from app.modules.auth import service as auth_service
-from app.modules.auth.deps import DB, client_ip, require_roles
+from app.modules.auth.deps import DB, Owner, client_ip
 from app.modules.auth.models import User, UserRole
 from app.modules.auth.schemas import Email, UserOut
 
 router = APIRouter(prefix="/admin/staff", tags=["admin: collaborateurs"])
 
-Owner = Annotated[User, Depends(require_roles(UserRole.OWNER))]
 STAFF_ROLES = (UserRole.COURIER, UserRole.MANAGER, UserRole.OWNER)
 
 
