@@ -54,6 +54,12 @@ La page d'accueil affiche « API : connectée » quand le frontend joint le back
 
 Les tests du backend utilisent la base `parfums_test` (variable `TEST_DATABASE_URL`), jamais la base de développement.
 
+**Nouvelle migration — à relire avant de l'appliquer.** L'autogénération d'Alembic :
+- écrit chaque contrainte d'énumération en triple : garder seulement le `sa.CheckConstraint(..., name=op.f("ck_…"))` et passer `create_constraint=False` dans le `sa.Enum(...)` rendu (voir la migration `0002`) ;
+- ne détecte pas les séquences (`order_number_seq`) : les écrire à la main.
+
+`uv run alembic check` (aussi exécuté en CI) vérifie ensuite que modèles et migrations correspondent.
+
 ## Intégration continue
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) exécute à chaque envoi sur `main` : lint, typage, migrations et tests du backend sur un vrai PostgreSQL 17 ; lint, typage, tests et build du frontend ; parcours navigateur de bout en bout (Chromium mobile et ordinateur).

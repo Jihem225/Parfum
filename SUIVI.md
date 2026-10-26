@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.1 — Backend : base de données et migrations** : à démarrer.
+**Étape 6.2 — Backend : authentification et permissions** : en cours.
+
+- Étape 6.1 — Base de données et migrations : **validée le 2026-10-26**. Le porteur autorise le commit + push de chaque sous-étape validée.
 
 - Étape 5 — Initialisation : **terminée le 2026-10-26** ; passage à l'étape 6 autorisé d'avance par le porteur (« dès que c'est OK tu passes à l'étape suivante »). Premier commit autorisé et effectué.
 
@@ -57,6 +59,9 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `docs/04-maquettes.md` + `docs/maquettes/` — maquettes des 10 écrans et charte provisoire (commité).
 - `README.md`, `.gitignore`, `docker-compose.yml`, `.github/workflows/ci.yml` — démarrage, CI (commité).
 - `backend/` — FastAPI : config, connexion base, `/api/v1/health`, Alembic (migration 0001 : extension `unaccent`), tests (commité).
+- `backend/app/modules/*/models.py`, `backend/app/core/models.py`, `backend/app/models.py` — modèle de données (6.1, commité)
+- `backend/alembic/versions/…0002_modele_de_donnees_mvp.py` — migration du modèle (6.1, commité)
+- `backend/tests/test_schema.py` — tests des contraintes (6.1, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -72,6 +77,8 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | backend `alembic upgrade head` (dev + test), `downgrade base` puis `upgrade head` | OK ; `unaccent('Ambré Néroli')` → `Ambre Neroli` |
 | 2026-10-26 | backend `pytest` (PostgreSQL 17.11, Postgres.app) | 2/2 réussis |
 | 2026-10-26 | démarrage réel : `fastapi run` (:8000) + `next start` (:3000) | `/api/v1/health` 200 en direct et via le relais Next.js ; accueil affiche « API : connectée » ; docs OpenAPI 200 |
+| 2026-10-26 | 6.1 : `alembic upgrade head` (0001 → 0002), `alembic check`, aller-retour `downgrade base` / `upgrade head` | OK ; 22 tables, 33 contraintes CHECK, 26 clés étrangères, séquence à 10001 |
+| 2026-10-26 | 6.1 : `pytest` (santé + 13 tests de contraintes) | 15/15 réussis |
 | — | E2E Playwright | non exécuté en local (Chromium indisponible sur macOS 13) → job `e2e` de la CI, pas encore exécuté (dépôt non poussé) |
 
 ## Problèmes connus / risques
@@ -87,6 +94,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Étape 6.1 : modèles SQLAlchemy et migration Alembic du modèle de données (docs/03 §4), tests des contraintes (stock, montants, unicité), puis bilan et validation avant l'étape 6.2 (authentification).
+Obtenir la validation de l'étape 6.1, puis étape 6.2 : authentification (inscription, connexion, sessions, CSRF, mot de passe oublié, limitation de débit, rôles, double authentification des collaborateurs).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

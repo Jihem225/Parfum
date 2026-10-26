@@ -30,6 +30,10 @@ target-version = "py313"
 select = ["E", "F", "I", "B", "UP", "S"]
 ignore = ["S101"]
 
+[tool.ruff.lint.per-file-ignores]
+# Migrations générées par Alembic : longues listes de valeurs d'énumération.
+"alembic/versions/*" = ["E501"]
+
 [tool.mypy]
 strict = true
 files = ["app", "tests"]
