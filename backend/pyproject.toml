@@ -9,6 +9,9 @@ dependencies = [
     "sqlalchemy==2.1.4",
     "alembic==1.20.0",
     "psycopg[binary]==3.3.6",
+    "pwdlib[argon2]==0.3.1",
+    "pyotp==2.10.0",
+    "cryptography==50.0.2",
 ]
 
 [dependency-groups]
@@ -33,6 +36,8 @@ ignore = ["S101"]
 [tool.ruff.lint.per-file-ignores]
 # Migrations générées par Alembic : longues listes de valeurs d'énumération.
 "alembic/versions/*" = ["E501"]
+# Tests : mots de passe factices en clair, attendus.
+"tests/*" = ["S105", "S106"]
 
 [tool.mypy]
 strict = true

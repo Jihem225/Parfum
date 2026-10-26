@@ -26,7 +26,7 @@ createdb parfums_test
 
 # 2. Backend — http://localhost:8000/api/v1/docs
 cd backend
-cp .env.example .env
+cp .env.example .env         # puis renseigner SECRET_KEY (commande de génération dans le fichier)
 uv sync                       # installe Python 3.13 et les dépendances
 uv run alembic upgrade head   # applique les migrations
 uv run fastapi dev app/main.py
@@ -51,6 +51,7 @@ La page d'accueil affiche « API : connectée » quand le frontend joint le back
 | Typage | `uv run mypy` | `pnpm typecheck` |
 | Nouvelle migration | `uv run alembic revision --autogenerate -m "description"` | — |
 | Appliquer les migrations | `uv run alembic upgrade head` | — |
+| Créer le premier Propriétaire | `uv run python -m app.scripts.create_owner <e-mail>` | — |
 
 Les tests du backend utilisent la base `parfums_test` (variable `TEST_DATABASE_URL`), jamais la base de développement.
 

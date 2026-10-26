@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 6.2 — Backend : authentification et permissions** : en cours.
+**Étape 6.3 — Backend : collections et familles olfactives** : en cours.
+
+- Étape 6.2 — Authentification et permissions : **validée le 2026-10-26**.
 
 - Étape 6.1 — Base de données et migrations : **validée le 2026-10-26**. Le porteur autorise le commit + push de chaque sous-étape validée.
 
@@ -62,6 +64,9 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 - `backend/app/modules/*/models.py`, `backend/app/core/models.py`, `backend/app/models.py` — modèle de données (6.1, commité)
 - `backend/alembic/versions/…0002_modele_de_donnees_mvp.py` — migration du modèle (6.1, commité)
 - `backend/tests/test_schema.py` — tests des contraintes (6.1, commité)
+- `backend/app/core/{errors,security,rate_limit,csrf,audit,email,validators}.py` — socle commun (6.2, commité)
+- `backend/app/modules/auth/{schemas,service,deps,router}.py`, `backend/app/modules/staff/router.py`, `backend/app/scripts/create_owner.py` — authentification, collaborateurs (6.2, commité)
+- `backend/tests/test_auth.py`, `backend/tests/test_staff.py` (6.2, commité)
 - `frontend/` — Next.js 16.4.3 : charte, relais `/api/v1`, page provisoire, Vitest, Playwright (commité).
 
 ## Tests exécutés
@@ -79,6 +84,10 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | démarrage réel : `fastapi run` (:8000) + `next start` (:3000) | `/api/v1/health` 200 en direct et via le relais Next.js ; accueil affiche « API : connectée » ; docs OpenAPI 200 |
 | 2026-10-26 | 6.1 : `alembic upgrade head` (0001 → 0002), `alembic check`, aller-retour `downgrade base` / `upgrade head` | OK ; 22 tables, 33 contraintes CHECK, 26 clés étrangères, séquence à 10001 |
 | 2026-10-26 | 6.1 : `pytest` (santé + 13 tests de contraintes) | 15/15 réussis |
+| 2026-10-26 | CI GitHub (après push 6.1 + correctif) | backend, frontend, e2e : verts ; E2E Playwright 2/2 (mobile + ordinateur) |
+| 2026-10-26 | 6.2 : `pytest` | 48/48 réussis (santé, schéma, authentification, collaborateurs) |
+| 2026-10-26 | 6.2 : parcours HTTP réel via le relais Next.js | CSRF refusé sans jeton (403), inscription 201 + cookie HttpOnly, /me 200, déconnexion 204, /me 401, admin anonyme 401, mauvais mot de passe 401 |
+| 2026-10-26 | 6.2 : script `create_owner` (base de test) | Propriétaire créé, Argon2id, audit tracé |
 | — | E2E Playwright | non exécuté en local (Chromium indisponible sur macOS 13) → job `e2e` de la CI, pas encore exécuté (dépôt non poussé) |
 
 ## Problèmes connus / risques
@@ -94,6 +103,6 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 
 ## Prochaine action
 
-Obtenir la validation de l'étape 6.1, puis étape 6.2 : authentification (inscription, connexion, sessions, CSRF, mot de passe oublié, limitation de débit, rôles, double authentification des collaborateurs).
+Obtenir la validation de l'étape 6.2 (puis commit + push), puis étape 6.3 : collections et familles olfactives (la marque étant unique, « marques et catégories » devient « collections et familles »).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

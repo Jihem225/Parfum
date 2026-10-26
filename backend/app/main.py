@@ -7,7 +7,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.csrf import csrf_middleware
 from app.core.db import get_db
+from app.core.errors import install_error_handlers
+from app.modules.auth.router import router as auth_router
+from app.modules.staff.router import router as staff_router
 
 is_prod = settings.app_env == "production"
 app = FastAPI(
@@ -17,11 +21,13 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None if is_prod else "/api/v1/openapi.json",
 )
+install_error_handlers(app)
+app.middleware("http")(csrf_middleware)
 
 api = APIRouter(prefix="/api/v1")
 
 
-@api.get("/health")
+@api.get("/health", tags=["santé"])
 def health(db: Annotated[Session, Depends(get_db)]) -> JSONResponse:
     try:
         db.execute(text("SELECT 1"))
@@ -30,4 +36,6 @@ def health(db: Annotated[Session, Depends(get_db)]) -> JSONResponse:
     return JSONResponse({"status": "ok", "database": "ok"})
 
 
+api.include_router(auth_router)
+api.include_router(staff_router)
 app.include_router(api)

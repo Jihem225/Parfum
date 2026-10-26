@@ -23,6 +23,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://parfums:parfums@localhost:5432/parfums_test
       TEST_DATABASE_URL: postgresql+psycopg://parfums:parfums@localhost:5432/parfums_test
+      SECRET_KEY: secret-de-ci-uniquement-pour-les-tests
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -70,6 +71,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://parfums:parfums@localhost:5432/parfums
       BACKEND_INTERNAL_URL: http://localhost:8000
+      SECRET_KEY: secret-de-ci-uniquement-pour-les-tests
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
