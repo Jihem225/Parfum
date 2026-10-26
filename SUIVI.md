@@ -4,7 +4,9 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 10 — Livraison et maintenance** : réalisée le 2026-10-26, **en attente d'approbation du bilan final** ([`docs/10-bilan.md`](docs/10-bilan.md)). Mise en ligne réelle toujours en attente : domaine, comptes Render / Cloudflare / Resend, décision sur la préproduction.
+**Les 10 étapes du prompt maître sont validées (2026-10-26).** Étape 10 — Livraison et maintenance : **validée le 2026-10-26** (« valide »), bilan : [`docs/10-bilan.md`](docs/10-bilan.md).
+
+**En attente du porteur pour la mise en ligne** : nom de domaine, comptes Render / Cloudflare / Resend, décision sur la préproduction.
 
 - Étape 9 — Déploiement (préparation) : **validée le 2026-10-26** (« valide »). Rien n'est encore en ligne.
 
@@ -199,7 +201,7 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-Approbation du bilan final (étape 10). Puis mise en ligne quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+Mise en ligne quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
 À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.
