@@ -20,6 +20,7 @@ function DeliveryCard({ d }: { d: Delivery }) {
   });
   const failed = useMutation({ mutationFn: () => api(`/courier/deliveries/${d.number}/failed`, { json: { reason, note } }), onSuccess: refresh });
   const failure = delivered.error ?? failed.error;
+  const prepaid = d.amount_to_collect === 0; // payée par mobile money
   return (
     <li className="flex flex-col gap-3 rounded border border-filet bg-white p-4">
       <div className="flex items-baseline justify-between">
@@ -34,9 +35,13 @@ function DeliveryCard({ d }: { d: Delivery }) {
         {d.landmark && <div className="text-encre-douce">Repère : {d.landmark}</div>}
       </div>
       <div className="text-sm text-encre-douce">{d.items.map((i) => `${i.quantity} × ${i.product_name} ${i.volume_ml} ml`).join(" · ")}</div>
-      <div className="flex items-center justify-between bg-surface px-3 py-3 text-lg font-bold">
-        <span>À encaisser</span><span>{formatFCFA(d.amount_to_collect)}</span>
-      </div>
+      {prepaid ? (
+        <div className="bg-surface px-3 py-3 text-lg font-bold">Déjà payée · rien à encaisser</div>
+      ) : (
+        <div className="flex items-center justify-between bg-surface px-3 py-3 text-lg font-bold">
+          <span>À encaisser</span><span>{formatFCFA(d.amount_to_collect)}</span>
+        </div>
+      )}
       {failure && <Alert>{errorMessage(failure)}</Alert>}
       {mode === "" && (
         <div className="grid grid-cols-2 gap-2">
@@ -44,7 +49,13 @@ function DeliveryCard({ d }: { d: Delivery }) {
           <Button variant="secondary" onClick={() => setMode("failed")}>Échec</Button>
         </div>
       )}
-      {mode === "delivered" && (
+      {mode === "delivered" && prepaid && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button disabled={delivered.isPending} onClick={() => delivered.mutate()}>Confirmer la remise</Button>
+          <Button variant="ghost" onClick={() => setMode("")}>Retour</Button>
+        </div>
+      )}
+      {mode === "delivered" && !prepaid && (
         <div className="flex flex-col gap-3">
           {/* RG-43 : « livrée » exige de confirmer l'encaissement du montant exact. */}
           <label className="flex items-start gap-3 text-[15px]">

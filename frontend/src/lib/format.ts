@@ -1,4 +1,4 @@
-import type { FailureReason, Gender, MovementType, OrderStatus, PaymentStatus, ProductStatus, Role } from "./types";
+import type { FailureReason, Gender, MovementType, OrderStatus, PaymentMethod, PaymentStatus, ProductStatus, Role } from "./types";
 
 const fcfa = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -26,6 +26,7 @@ export function formatPhone(phone: string): string {
 }
 
 export const ORDER_STATUS: Record<OrderStatus, string> = {
+  EN_ATTENTE_PAIEMENT: "En attente de paiement",
   EN_ATTENTE_CONFIRMATION: "En attente de confirmation",
   CONFIRMEE: "Confirmée",
   EN_PREPARATION: "En préparation",
@@ -38,10 +39,17 @@ export const ORDER_STATUS: Record<OrderStatus, string> = {
 
 export const PAYMENT_STATUS: Record<PaymentStatus, string> = {
   A_ENCAISSER: "À encaisser",
+  A_PAYER: "À payer",
+  PAYE: "Payé",
   ENCAISSE: "Encaissé",
   REMIS: "Remis en caisse",
   ANNULE: "Annulé",
   REMBOURSE: "Remboursé",
+};
+
+export const PAYMENT_METHOD: Record<PaymentMethod, string> = {
+  CASH_ON_DELIVERY: "Espèces à la livraison",
+  MOBILE_MONEY: "Mobile money",
 };
 
 export const PRODUCT_STATUS: Record<ProductStatus, string> = { DRAFT: "Brouillon", PUBLISHED: "Publié", ARCHIVED: "Archivé" };

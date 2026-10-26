@@ -75,6 +75,9 @@ jobs:
       # Comptes de test E2E (gestionnaire avec double authentification, livreur) : CI uniquement.
       SEED_STAFF_PASSWORD: motdepasse-e2e-uniquement
       SEED_MANAGER_TOTP_SECRET: JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP
+      # Mobile money : faux prestataire (refusé en production), pour les parcours de paiement.
+      PAYMENT_PROVIDER: simulation
+      PAYMENT_WEBHOOK_SECRET: secret-de-ci-uniquement
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

@@ -73,6 +73,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 const STATUS_TONE: Partial<Record<OrderStatus, string>> = {
+  EN_ATTENTE_PAIEMENT: "bg-info text-white",
   EN_ATTENTE_CONFIRMATION: "bg-encre text-porcelaine",
   LIVREE: "bg-succes text-white",
   ECHEC_LIVRAISON: "bg-safran text-white",

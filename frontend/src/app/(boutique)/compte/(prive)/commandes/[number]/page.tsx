@@ -31,7 +31,8 @@ export default function MaCommandePage() {
           variant="secondary"
           disabled={cancel.isPending}
           onClick={() => {
-            if (window.confirm("Annuler cette commande ?")) cancel.mutate();
+            const paid = order.data?.payment_method === "MOBILE_MONEY" && order.data.status !== "EN_ATTENTE_PAIEMENT";
+            if (window.confirm(paid ? "Annuler cette commande ? La boutique vous remboursera votre paiement." : "Annuler cette commande ?")) cancel.mutate();
           }}
         >
           Annuler la commande

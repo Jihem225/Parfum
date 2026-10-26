@@ -45,7 +45,11 @@ export function PrintDocument({ number, doc }: { number: string; doc: "bon" | "b
           </div>
           <div className="text-sm">{o.items.map((i) => `${i.quantity} × ${i.product_name} ${i.volume_ml} ml`).join(" · ")}</div>
           <div className="flex items-center justify-between border-2 border-encre p-4 text-xl font-bold">
-            <span>À encaisser en espèces</span><span>{formatFCFA(o.total)}</span>
+            {o.payment_method === "MOBILE_MONEY" ? (
+              <><span>Déjà payée · rien à encaisser</span><span>{formatFCFA(0)}</span></>
+            ) : (
+              <><span>À encaisser en espèces</span><span>{formatFCFA(o.total)}</span></>
+            )}
           </div>
           {o.courier && <div>Livreur : {o.courier.full_name}</div>}
         </div>

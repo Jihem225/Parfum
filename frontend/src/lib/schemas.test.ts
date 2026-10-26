@@ -30,6 +30,12 @@ describe("formulaire de commande", () => {
     const out = checkoutSchema.parse(valid);
     expect(out.phone).toBe("0708123456");
     expect(out.commune_id).toBe(3);
+    expect(out.payment_method).toBe("CASH_ON_DELIVERY"); // paiement à la livraison par défaut
+  });
+
+  it("accepte le mobile money, refuse un moyen inconnu", () => {
+    expect(checkoutSchema.parse({ ...valid, payment_method: "MOBILE_MONEY" }).payment_method).toBe("MOBILE_MONEY");
+    expect(checkoutSchema.safeParse({ ...valid, payment_method: "CARTE" }).success).toBe(false);
   });
 
   it("exige les CGV et une commune", () => {

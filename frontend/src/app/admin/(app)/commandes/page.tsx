@@ -10,7 +10,7 @@ import { api, errorMessage } from "@/lib/api";
 import { formatDateTime, formatFCFA, formatPhone, ORDER_STATUS, PAYMENT_STATUS } from "@/lib/format";
 import type { AdminOrderRow, OrderStatus, Page } from "@/lib/types";
 
-const TABS: (OrderStatus | "")[] = ["", "EN_ATTENTE_CONFIRMATION", "CONFIRMEE", "EN_PREPARATION", "EN_LIVRAISON", "ECHEC_LIVRAISON", "LIVREE", "ANNULEE", "RETOURNEE"];
+const TABS: (OrderStatus | "")[] = ["", "EN_ATTENTE_PAIEMENT", "EN_ATTENTE_CONFIRMATION", "CONFIRMEE", "EN_PREPARATION", "EN_LIVRAISON", "ECHEC_LIVRAISON", "LIVREE", "ANNULEE", "RETOURNEE"];
 
 export default function CommandesPage() {
   const sp = useSearchParams();

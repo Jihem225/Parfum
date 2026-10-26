@@ -4,7 +4,7 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 11 — Mobile money** (hors prompt, demandée le 2026-10-26 ; mise en ligne repoussée à la fin par le porteur) : **11.1 backend réalisée, en attente de validation**. Puis 11.2 frontend, 11.3 documentation.
+**Étape 11 — Mobile money** (hors prompt, demandée le 2026-10-26 ; mise en ligne repoussée à la fin par le porteur) : 11.1 backend **validée le 2026-10-26** (« continue ce projet ») ; 11.2 frontend **validée le 2026-10-26** (« valide ») ; **11.3 documentation en cours**.
 
 Décisions du porteur (2026-10-26) : prestataire **pas encore choisi** → interface neutre + prestataire de simulation (développement / CI, refusé en production) ; **pas de plafond** de 300 000 FCFA pour le mobile money ; commande payée = **Confirmée sans appel** ; non payée en **30 minutes** = annulée, stock libéré.
 
@@ -110,6 +110,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
   - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
   - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
   - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` + `e2e/order.ts` (Playwright, CI ; étape 8 : recherche, rupture, annulation client, accès back-office).
+- Étape 11.2 : `frontend/src/app/(boutique)/commande/` (choix du paiement, redirection, `paiement/` page de retour et nouvel essai, `confirmee` « payée »), `frontend/src/app/paiement/simulation/` (faux prestataire), `frontend/src/components/{pay-button,order-view}.tsx`, panier, compte, back-office (onglet « En attente de paiement », moyen de paiement, livraison sans encaissement, remboursement d'un paiement reçu sur une commande annulée, bordereau), livreur (« rien à encaisser »), `src/lib/{types,format,schemas}.ts`, `e2e/paiement.spec.ts` + scénario mobile money dans `e2e/backoffice.spec.ts`, CI (`PAYMENT_PROVIDER=simulation` dans le job e2e), `backend/tests/conftest.py` (tests isolés du `.env` local).
 - Étape 11.1 : `backend/app/modules/payments/providers.py`, `backend/app/modules/orders/{service,router,schemas,notify,jobs}.py`, migration `0003_mobile_money`, `backend/app/core/{config,csrf}.py`, `backend/app/main.py` (tâche d'expiration), panier et livreur, `backend/tests/test_mobile_money.py`.
 - Étape 10 : `docs/10-bilan.md`, `docs/10-guide-back-office.md`, `docs/03-conception-technique.md` (§8, §12 à jour), `backend/app/core/images.py` (décodeurs limités).
 - Étape 9 : `render.yaml`, `.github/workflows/backup.yml`, `docs/09-deploiement.md`, `backend/app/core/{config,storage}.py` (garde-fous de production, R2), `backend/app/modules/auth/deps.py` (`client_ip`), `backend/tests/test_production.py`, `frontend/src/lib/backend.ts`.
@@ -167,7 +168,11 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
 | 2026-10-26 | 11.1 : migration 0003 (`upgrade`, `alembic check`, `downgrade 0002`, `upgrade`) | OK |
 | 2026-10-26 | 11.1 : backend `pytest`, `ruff`, `mypy` (comme en CI) | 156/156 réussis (dont 7 mobile money) ; OK ; OK |
 | 2026-10-26 | 11.1 : parcours réel via le relais Next.js (simulation) | PP-10002 « En attente de paiement » ; avis falsifié sans cookie → 401 ; échec → inchangé ; paiement → Confirmée / Payé ; mauvais jeton → 404 |
-| — | E2E Playwright | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
+| 2026-10-26 | 11.2 : backend `pytest` (avec `PAYMENT_PROVIDER=simulation` dans `.env`), `ruff`, `mypy` | 156/156 (avant correctif de `conftest.py` : 4 échecs, les tests lisaient le `.env` local) ; OK ; OK |
+| 2026-10-26 | 11.2 : frontend lint / typecheck / Vitest / build | OK / OK / 12/12 / OK |
+| 2026-10-26 | 11.2 : E2E Playwright **en local** (nouveau poste macOS 26, Chromium disponible), base neuve, `CI=1` | **24/24 réussis**, 0 relance (12 parcours × mobile + ordinateur, dont mobile money : refus → nouvel essai → payé → suivi ; lien falsifié ; payée → livreur « rien à encaisser » → absente des encaissements). Rejoués sur la même base : échecs par limite de commandes par IP (429) et stock épuisé, attendus |
+| 2026-10-26 | 11.2 : captures sur Pixel 7 (commande avec choix du paiement, page simulée, paiement en attente) | affichage correct |
+| — | E2E Playwright (ancien poste macOS 13) | jamais exécuté en local (Chromium indisponible sur macOS 13) : uniquement dans le job `e2e` de la CI |
 
 ## Étape 8 — matrice des parcours
 
@@ -209,7 +214,8 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-Validation de 11.1, puis 11.2 (frontend : choix du paiement, redirection, page de retour, page de simulation, back-office et livreur). Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+11.3 (documentation : guide du back-office, bilan, docs/03 et docs/09 pour le futur prestataire réel ; bandeau et description du site encore « paiement à la livraison »). Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
 À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.
+Nouveau poste (2026-10-26) : macOS 26.1, Node 25, Homebrew : `uv`, `pnpm`, `postgresql@17` (`brew services start postgresql@17`, binaires dans `/opt/homebrew/opt/postgresql@17/bin`) ; Chromium Playwright installé (E2E possibles en local). `backend/.env` : `PAYMENT_PROVIDER=simulation`. `gh` non authentifié (dépôt cloné en HTTPS).

@@ -28,6 +28,7 @@ export const checkoutSchema = z.object({
   address_line: z.string().trim().min(3, "Indiquez votre adresse (quartier, rue, bâtiment).").max(255),
   landmark: z.string().trim().max(255),
   accept_terms: z.boolean().refine((v) => v, "Vous devez accepter les conditions générales de vente."),
+  payment_method: z.enum(["CASH_ON_DELIVERY", "MOBILE_MONEY"]).default("CASH_ON_DELIVERY"),
 });
 export type CheckoutValues = z.input<typeof checkoutSchema>;
 

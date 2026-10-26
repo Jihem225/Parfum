@@ -67,8 +67,14 @@ export default function PanierPage() {
             <span>Sous-total</span>
             <span>{formatFCFA(cart.subtotal)}</span>
           </div>
-          <p className="text-sm text-encre-douce">Frais de livraison selon votre commune, affichés à l&apos;étape suivante. Paiement en espèces à la livraison.</p>
-          {cart.exceeds_cod_limit && (
+          <p className="text-sm text-encre-douce">
+            Frais de livraison selon votre commune, affichés à l&apos;étape suivante. Paiement en espèces à la livraison
+            {cart.mobile_money ? " ou par mobile money." : "."}
+          </p>
+          {cart.exceeds_cod_limit && cart.mobile_money && (
+            <Alert tone="info">Au-delà de 300 000 FCFA, le paiement se fait par mobile money à l&apos;étape suivante.</Alert>
+          )}
+          {cart.exceeds_cod_limit && !cart.mobile_money && (
             <Alert tone="info">
               Au-delà de 300 000 FCFA, <Link href="/contact" className="font-semibold underline">contactez la boutique</Link> pour passer votre commande.
             </Alert>

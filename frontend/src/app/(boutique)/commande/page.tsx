@@ -7,14 +7,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { z } from "zod";
+import { startPayment } from "@/components/pay-button";
 import { Alert, Button, buttonClass, Field, inputClass, Loading } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
-import { formatFCFA } from "@/lib/format";
+import { formatFCFA, PAYMENT_METHOD } from "@/lib/format";
 import { useCart, useMe } from "@/lib/hooks";
 import { checkoutSchema, type CheckoutValues } from "@/lib/schemas";
-import type { Address, CheckoutPreview, Commune, Order } from "@/lib/types";
+import type { Address, CheckoutPreview, Commune, Order, PaymentMethod } from "@/lib/types";
 
 type Out = z.output<typeof checkoutSchema>;
+
+const PAYMENT_CHOICES: [PaymentMethod, string][] = [
+  ["CASH_ON_DELIVERY", "Vous payez le livreur à la réception. Nous vous appelons d'abord pour confirmer."],
+  ["MOBILE_MONEY", "Vous payez depuis votre téléphone. La commande est confirmée dès le paiement, sans appel."],
+];
 
 export default function CommandePage() {
   const router = useRouter();
@@ -32,7 +38,7 @@ export default function CommandePage() {
   const idempotencyKey = useRef<string | null>(null);
   const form = useForm<CheckoutValues, unknown, Out>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { customer_name: "", phone: "", email: "", commune_id: "", address_line: "", landmark: "", accept_terms: false },
+    defaultValues: { customer_name: "", phone: "", email: "", commune_id: "", address_line: "", landmark: "", accept_terms: false, payment_method: "CASH_ON_DELIVERY" },
   });
   const { register, handleSubmit, setValue, setError, control, formState: { errors } } = form;
 
@@ -54,11 +60,18 @@ export default function CommandePage() {
   }, [defaultAddress, setValue]);
 
   const communeId = Number(useWatch({ control, name: "commune_id" })) || 0;
+  const method = useWatch({ control, name: "payment_method" });
+  const mobile = method === "MOBILE_MONEY";
   const preview = useQuery({
-    queryKey: ["preview", communeId, cart.data?.subtotal, cart.data?.item_count],
-    queryFn: () => api<CheckoutPreview>("/checkout/preview", { json: { commune_id: communeId } }),
+    queryKey: ["preview", communeId, method, cart.data?.subtotal, cart.data?.item_count],
+    queryFn: () => api<CheckoutPreview>("/checkout/preview", { json: { commune_id: communeId, payment_method: method } }),
     enabled: communeId > 0,
   });
+  // Au-delà du plafond du paiement à la livraison (RG-23), seul le mobile money reste possible.
+  const codBlocked = !!cart.data?.mobile_money && !!preview.data?.exceeds_cod_limit;
+  useEffect(() => {
+    if (codBlocked) setValue("payment_method", "MOBILE_MONEY");
+  }, [codBlocked, setValue]);
 
   const place = useMutation({
     mutationFn: (v: Out) => {
@@ -67,9 +80,13 @@ export default function CommandePage() {
         json: { ...v, email: v.email || null, expected_total: preview.data?.total, idempotency_key: idempotencyKey.current },
       });
     },
-    onSuccess: (order) => {
+    onSuccess: async (order) => {
       qc.invalidateQueries({ queryKey: ["cart"] });
-      router.push(`/commande/confirmee?numero=${order.number}`);
+      if (!order.payment_token) return router.push(`/commande/confirmee?numero=${order.number}`);
+      // Mobile money : direction la page du prestataire ; en cas d'échec, la page de paiement
+      // de la commande permet de réessayer.
+      const back = `/commande/paiement?numero=${order.number}&t=${order.payment_token}`;
+      await startPayment(order.number, order.payment_token).catch(() => router.push(back));
     },
     onError: (e) => {
       if (!(e instanceof ApiError)) return;
@@ -82,7 +99,7 @@ export default function CommandePage() {
   });
 
   if (cart.isLoading) return <Loading />;
-  if (!cart.data?.items.length && !place.isSuccess) {
+  if (!cart.data?.items.length && !place.isPending && !place.isSuccess) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-start gap-4 px-4 py-8">
         <h1 className="font-display text-[32px]">Commande</h1>
@@ -127,7 +144,7 @@ export default function CommandePage() {
         <Field label="Nom et prénom" error={errors.customer_name?.message}>
           <input {...register("customer_name")} autoComplete="name" className={inputClass} aria-invalid={!!errors.customer_name} />
         </Field>
-        <Field label="Téléphone" hint="Nous vous appelons pour confirmer la commande." error={errors.phone?.message}>
+        <Field label="Téléphone" hint={mobile ? "Pour joindre le livreur à l'arrivée." : "Nous vous appelons pour confirmer la commande."} error={errors.phone?.message}>
           <input {...register("phone")} type="tel" inputMode="tel" autoComplete="tel" placeholder="07 08 12 34 56" className={inputClass} aria-invalid={!!errors.phone} />
         </Field>
         <Field label="E-mail (facultatif)" hint="Pour recevoir le suivi de votre commande." error={errors.email?.message}>
@@ -150,6 +167,26 @@ export default function CommandePage() {
         <Field label="Point de repère (facultatif)" error={errors.landmark?.message}>
           <input {...register("landmark")} placeholder="Près de la pharmacie…" className={inputClass} />
         </Field>
+        {cart.data?.mobile_money && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1.5 text-sm font-semibold">Paiement</legend>
+            {PAYMENT_CHOICES.map(([value, hint]) => {
+              const disabled = value === "CASH_ON_DELIVERY" && codBlocked;
+              return (
+                <label
+                  key={value}
+                  className={`flex items-start gap-3 border p-3 text-sm ${method === value ? "border-encre" : "border-[#cfc8be]"} ${disabled ? "opacity-50" : "cursor-pointer"} bg-white`}
+                >
+                  <input type="radio" value={value} disabled={disabled} {...register("payment_method")} className="mt-0.5 h-5 w-5 flex-none accent-encre" />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-semibold">{PAYMENT_METHOD[value]}</span>
+                    <span className="text-encre-douce">{disabled ? "Indisponible au-delà de 300 000 FCFA." : hint}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
+        )}
         <label className="flex items-start gap-3 text-sm">
           <input type="checkbox" {...register("accept_terms")} className="mt-0.5 h-5 w-5 flex-none" aria-invalid={!!errors.accept_terms} />
           <span>
@@ -175,8 +212,16 @@ export default function CommandePage() {
           <span>Total</span>
           <span>{formatFCFA(p ? p.total : (cart.data?.subtotal ?? 0))}</span>
         </div>
-        <p className="text-sm">À payer <strong>en espèces à la livraison</strong>.</p>
-        {p?.exceeds_cod_limit && <Alert tone="info">Au-delà de 300 000 FCFA, contactez la boutique pour commander.</Alert>}
+        {mobile ? (
+          <p className="text-sm">
+            À payer <strong>maintenant par mobile money</strong>. Sans paiement dans les 30 minutes, la commande est annulée.
+          </p>
+        ) : (
+          <p className="text-sm">À payer <strong>en espèces à la livraison</strong>.</p>
+        )}
+        {p?.exceeds_cod_limit && !cart.data?.mobile_money && (
+          <Alert tone="info">Au-delà de 300 000 FCFA, contactez la boutique pour commander.</Alert>
+        )}
         {place.isError && (
           <Alert>
             {errorMessage(place.error)}
@@ -185,8 +230,8 @@ export default function CommandePage() {
             )}
           </Alert>
         )}
-        <Button type="submit" disabled={place.isPending || !p?.can_order}>
-          {place.isPending ? "Validation…" : "Valider la commande"}
+        <Button type="submit" disabled={place.isPending || place.isSuccess || !p?.can_order}>
+          {place.isPending || place.isSuccess ? "Validation…" : mobile ? `Payer ${formatFCFA(p ? p.total : (cart.data?.subtotal ?? 0))}` : "Valider la commande"}
         </Button>
         {!communeId && <p className="text-xs text-encre-douce">Choisissez votre commune pour voir le total.</p>}
       </aside>

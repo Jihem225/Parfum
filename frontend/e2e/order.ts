@@ -1,7 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
-/** Commande passée par l'API (dans la session de `page`) : 1 × Vétiver Plateau 50 ml. */
-export async function placeOrder(page: Page): Promise<string> {
+/** Commande passée par l'API (dans la session de `page`) : 1 × Vétiver Plateau 50 ml. Avec
+ * `paid`, réglée par mobile money (prestataire de simulation). */
+export async function placeOrder(page: Page, { paid = false } = {}): Promise<string> {
   await page.goto("/"); // pose le cookie CSRF
   const csrf = (await page.context().cookies()).find((c) => c.name === "csrf")?.value ?? "";
   const headers = { "X-CSRF-Token": csrf };
@@ -19,8 +20,14 @@ export async function placeOrder(page: Page): Promise<string> {
       accept_terms: true,
       expected_total: preview.total,
       idempotency_key: crypto.randomUUID(),
+      payment_method: paid ? "MOBILE_MONEY" : "CASH_ON_DELIVERY",
     },
   });
   expect(order.status()).toBe(201);
-  return (await order.json()).number;
+  const { number, payment_token } = await order.json();
+  if (paid) {
+    const payment = await page.request.post(`/api/v1/payments/simulation/${number}`, { headers, data: { token: payment_token, paid: true } });
+    expect((await payment.json()).order_status).toBe("CONFIRMEE");
+  }
+  return number;
 }

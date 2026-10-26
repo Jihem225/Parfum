@@ -13,6 +13,9 @@ os.environ["APP_ENV"] = "test"
 os.environ.setdefault("SECRET_KEY", "secret-de-test-uniquement")
 os.environ["COOKIE_SECURE"] = "false"
 os.environ["RESEND_API_KEY"] = ""
+# Mobile money désactivé quel que soit le .env local : les tests l'activent eux-mêmes.
+os.environ["PAYMENT_PROVIDER"] = ""
+os.environ["PAYMENT_WEBHOOK_SECRET"] = ""
 os.environ["MEDIA_DIR"] = tempfile.mkdtemp(prefix="parfums-media-")
 
 from alembic.config import Config  # noqa: E402

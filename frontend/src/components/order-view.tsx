@@ -1,6 +1,13 @@
 import { formatDateTime, formatFCFA, formatPhone, ORDER_STATUS } from "@/lib/format";
 import type { Order } from "@/lib/types";
-import { StatusPill } from "./ui";
+import { PayButton } from "./pay-button";
+import { Alert, StatusPill } from "./ui";
+
+function totalLabel(order: Order): string {
+  if (order.payment_method === "CASH_ON_DELIVERY") return "Total à payer en espèces à la livraison";
+  if (order.status === "EN_ATTENTE_PAIEMENT") return "Total à payer par mobile money";
+  return order.status === "ANNULEE" ? "Total" : "Total payé par mobile money";
+}
 
 /** Détail d'une commande côté client : copie figée (RG-26) et chronologie des statuts. */
 export function OrderView({ order }: { order: Order }) {
@@ -11,6 +18,13 @@ export function OrderView({ order }: { order: Order }) {
         <StatusPill status={order.status} />
         <span className="text-sm text-encre-douce">passée le {formatDateTime(order.created_at)}</span>
       </div>
+
+      {order.payment_token && (
+        <div className="flex flex-col gap-3">
+          <Alert tone="info">Cette commande attend votre paiement. Sans paiement dans les 30 minutes suivant la commande, elle est annulée.</Alert>
+          <PayButton number={order.number} token={order.payment_token} label={`Payer ${formatFCFA(order.total)}`} />
+        </div>
+      )}
 
       <ol className="flex flex-col border-l-2 border-filet pl-4" aria-label="Historique">
         {order.history.map((h, i) => (
@@ -36,7 +50,7 @@ export function OrderView({ order }: { order: Order }) {
           <span>{formatFCFA(order.delivery_fee)}</span>
         </div>
         <div className="flex justify-between border-t border-filet pt-2 text-base font-bold">
-          <span>Total à payer en espèces à la livraison</span>
+          <span>{totalLabel(order)}</span>
           <span>{formatFCFA(order.total)}</span>
         </div>
       </section>

@@ -18,6 +18,33 @@ async function login(page: Page, path: string, email: string, withCode: boolean)
   }
 }
 
+test("commande payée par mobile money : confirmée sans appel, rien à encaisser", async ({ browser }) => {
+  const number = await placeOrder(await browser.newPage(), { paid: true });
+
+  const admin = await browser.newPage();
+  await login(admin, "/admin/connexion", "gestion-e2e@exemple.com", true);
+  await expect(admin.getByRole("heading", { name: "Tableau de bord" })).toBeVisible();
+  await admin.goto(`/admin/commandes/${number}`);
+  await expect(admin.getByText("Paiement : Mobile money · Payé")).toBeVisible();
+  await expect(admin.getByRole("button", { name: "Pas de réponse" })).toHaveCount(0); // pas d'appel
+  await admin.getByRole("button", { name: "Passer en préparation" }).click();
+  await admin.getByLabel("Livreur").selectOption({ index: 1 });
+  await admin.getByRole("button", { name: "Confier au livreur" }).click();
+  await expect(admin.getByText("Livreur : Livreur Test")).toBeVisible();
+
+  const courier = await browser.newPage();
+  await login(courier, "/livreur/connexion", "livreur-e2e@exemple.com", false);
+  const card = courier.locator("li", { hasText: number });
+  await expect(card.getByText("Déjà payée · rien à encaisser")).toBeVisible();
+  await card.getByRole("button", { name: "Livrée", exact: true }).click();
+  await card.getByRole("button", { name: "Confirmer la remise" }).click();
+  await expect(courier.locator("li", { hasText: number })).toHaveCount(0);
+
+  await admin.goto("/admin/encaissements");
+  await expect(admin.getByText(/Aucun livreur ne détient|à remettre/).first()).toBeVisible(); // données chargées
+  await expect(admin.getByRole("link", { name: new RegExp(number) })).toHaveCount(0); // aucune espèce
+});
+
 test("commande traitée, livrée, encaissée puis remise en caisse", async ({ browser }) => {
   const customer = await browser.newPage();
   const number = await placeOrder(customer);

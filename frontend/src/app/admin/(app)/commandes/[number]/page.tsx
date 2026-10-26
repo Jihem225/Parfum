@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Card } from "@/components/admin/ui";
 import { Alert, Button, buttonClass, Field, inputClass, Loading, StatusPill } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
-import { FAILURE_REASON, formatDateTime, formatFCFA, formatPhone, ORDER_STATUS, PAYMENT_STATUS } from "@/lib/format";
+import { FAILURE_REASON, formatDateTime, formatFCFA, formatPhone, ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
 import type { AdminOrder, CallResult, FailureReason, OrderStatus } from "@/lib/types";
 
@@ -51,10 +51,12 @@ export default function CommandeDetailPage() {
   if (order.isLoading) return <Loading />;
   if (order.error || !order.data) return <Alert>{errorMessage(order.error)}</Alert>;
   const o = order.data;
-  const cancellable = ["EN_ATTENTE_CONFIRMATION", "CONFIRMEE", "EN_PREPARATION"].includes(o.status);
+  const cancellable = ["EN_ATTENTE_PAIEMENT", "EN_ATTENTE_CONFIRMATION", "CONFIRMEE", "EN_PREPARATION"].includes(o.status);
+  const prepaid = o.payment_method === "MOBILE_MONEY";
   const cancel = () => {
     if (!note.trim()) return window.alert("Indiquez le motif de l'annulation dans la note.");
-    if (window.confirm(`Annuler la commande ${o.number} ? Le stock sera libéré.`)) move.mutate("ANNULEE");
+    const refund = o.payment_status === "PAYE" ? " Le paiement mobile money devra être remboursé." : "";
+    if (window.confirm(`Annuler la commande ${o.number} ? Le stock sera libéré.${refund}`)) move.mutate("ANNULEE");
   };
   const courierPicker = (
     <Field label="Livreur">
@@ -71,7 +73,7 @@ export default function CommandeDetailPage() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold tracking-[0.02em]">{o.number}</h1>
         <StatusPill status={o.status} />
-        <span className="text-sm text-encre-douce">Paiement : {PAYMENT_STATUS[o.payment_status]}</span>
+        <span className="text-sm text-encre-douce">Paiement : {PAYMENT_METHOD[o.payment_method]} · {PAYMENT_STATUS[o.payment_status]}</span>
         <div className="no-print ml-auto flex gap-2">
           <Link href={`/admin/imprimer/${o.number}?doc=bon`} target="_blank" className={buttonClass("secondary", "sm")}>Bon de préparation</Link>
           <Link href={`/admin/imprimer/${o.number}?doc=bordereau`} target="_blank" className={buttonClass("secondary", "sm")}>Bordereau</Link>
@@ -79,6 +81,9 @@ export default function CommandeDetailPage() {
       </div>
       <p className="text-sm text-encre-douce">Reçue le {formatDateTime(o.created_at)} · {o.user_id ? "client avec compte" : "invité"}</p>
       {o.should_cancel && <Alert tone="info">3 appels sans réponse : cette commande peut être annulée (RG-31).</Alert>}
+      {o.status === "EN_ATTENTE_PAIEMENT" && (
+        <Alert tone="info">Paiement mobile money attendu : la commande sera confirmée dès le paiement, sans appel, ou annulée 30 minutes après sa création.</Alert>
+      )}
       {failure && <Alert>{errorMessage(failure)}</Alert>}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
@@ -107,7 +112,7 @@ export default function CommandeDetailPage() {
                 </div>
               ))}
               <div className="flex justify-between text-encre-douce"><span>Livraison</span><span>{formatFCFA(o.delivery_fee)}</span></div>
-              <div className="flex justify-between border-t border-filet pt-2 font-bold"><span>Total · espèces à encaisser</span><span>{formatFCFA(o.total)}</span></div>
+              <div className="flex justify-between border-t border-filet pt-2 font-bold"><span>Total · {prepaid ? "mobile money" : "espèces à encaisser"}</span><span>{formatFCFA(o.total)}</span></div>
             </div>
           </Card>
           <Card title="Historique">
@@ -153,12 +158,18 @@ export default function CommandeDetailPage() {
             )}
             {o.status === "EN_LIVRAISON" && (
               <>
-                <Button
-                  disabled={delivered.isPending}
-                  onClick={() => window.confirm(`Le livreur a bien encaissé ${formatFCFA(o.total)} ?`) && delivered.mutate(o.total)}
-                >
-                  Livrée et encaissée
-                </Button>
+                {prepaid ? (
+                  <Button disabled={delivered.isPending} onClick={() => window.confirm("Commande remise au client ? (déjà payée)") && delivered.mutate(0)}>
+                    Livrée
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={delivered.isPending}
+                    onClick={() => window.confirm(`Le livreur a bien encaissé ${formatFCFA(o.total)} ?`) && delivered.mutate(o.total)}
+                  >
+                    Livrée et encaissée
+                  </Button>
+                )}
                 <Field label="Motif de l'échec">
                   <select value={reason} onChange={(e) => setReason(e.target.value as FailureReason)} className={inputClass}>
                     {Object.entries(FAILURE_REASON).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -172,6 +183,7 @@ export default function CommandeDetailPage() {
           {(o.status === "ECHEC_LIVRAISON" || (o.status === "LIVREE" && me?.role === "OWNER")) && (
             <ReturnForm order={o} onDone={done} />
           )}
+          {o.status === "ANNULEE" && o.payment_status === "PAYE" && <RefundForm order={o} owner={me?.role === "OWNER"} onDone={done} />}
         </div>
       </div>
     </>
@@ -213,7 +225,7 @@ function ReturnForm({ order, onDone }: { order: AdminOrder; onDone: (o: AdminOrd
       })}
       <Field label="Note"><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} className={inputClass} /></Field>
       {delivered && (
-        <Field label="Montant remboursé en espèces (FCFA)">
+        <Field label={order.payment_method === "MOBILE_MONEY" ? "Montant remboursé par mobile money (FCFA)" : "Montant remboursé en espèces (FCFA)"}>
           <input type="number" min={0} max={order.total} value={refund} onChange={(e) => setRefund(e.target.value)} className={inputClass} />
         </Field>
       )}
@@ -221,6 +233,45 @@ function ReturnForm({ order, onDone }: { order: AdminOrder; onDone: (o: AdminOrd
       <Button variant="secondary" disabled={submit.isPending} onClick={() => window.confirm("Enregistrer ce retour ? Cette action est définitive.") && submit.mutate()}>
         Enregistrer le retour
       </Button>
+    </Card>
+  );
+}
+
+/** Commande annulée alors qu'elle était payée (ou paiement arrivé après l'annulation) : le
+ * remboursement se fait chez le prestataire, puis le Propriétaire l'enregistre ici. */
+function RefundForm({ order, owner, onDone }: { order: AdminOrder; owner: boolean; onDone: (o: AdminOrder) => void }) {
+  const [amount, setAmount] = useState(String(order.total));
+  const [note, setNote] = useState("");
+  const submit = useMutation({
+    mutationFn: () => api<AdminOrder>(`/admin/orders/${order.number}/refund`, { json: { amount: Number(amount), note } }),
+    onSuccess: onDone,
+  });
+  return (
+    <Card title="Paiement à rembourser">
+      <p className="text-sm">
+        {formatFCFA(order.total)} ont été payés par mobile money sur cette commande annulée. Remboursez le client depuis le tableau de bord du prestataire,
+        puis enregistrez le remboursement.
+      </p>
+      {owner ? (
+        <>
+          <Field label="Montant remboursé (FCFA)">
+            <input type="number" min={1} max={order.total} value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Note" hint="Référence du remboursement chez le prestataire, par exemple.">
+            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className={inputClass} />
+          </Field>
+          {submit.isError && <Alert>{errorMessage(submit.error)}</Alert>}
+          <Button
+            variant="secondary"
+            disabled={submit.isPending}
+            onClick={() => window.confirm(`Enregistrer le remboursement de ${formatFCFA(Number(amount) || 0)} ? Cette action est définitive.`) && submit.mutate()}
+          >
+            Enregistrer le remboursement
+          </Button>
+        </>
+      ) : (
+        <p className="text-sm text-encre-douce">Le Propriétaire enregistre le remboursement.</p>
+      )}
     </Card>
   );
 }

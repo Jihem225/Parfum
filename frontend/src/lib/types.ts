@@ -5,6 +5,7 @@ export type StockStatus = "IN_STOCK" | "LOW" | "OUT";
 export type Role = "CUSTOMER" | "COURIER" | "MANAGER" | "OWNER";
 export type ProductStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type OrderStatus =
+  | "EN_ATTENTE_PAIEMENT"
   | "EN_ATTENTE_CONFIRMATION"
   | "CONFIRMEE"
   | "EN_PREPARATION"
@@ -13,7 +14,8 @@ export type OrderStatus =
   | "ECHEC_LIVRAISON"
   | "RETOURNEE"
   | "ANNULEE";
-export type PaymentStatus = "A_ENCAISSER" | "ENCAISSE" | "REMIS" | "ANNULE" | "REMBOURSE";
+export type PaymentStatus = "A_ENCAISSER" | "A_PAYER" | "PAYE" | "ENCAISSE" | "REMIS" | "ANNULE" | "REMBOURSE";
+export type PaymentMethod = "CASH_ON_DELIVERY" | "MOBILE_MONEY";
 export type CallResult = "CONFIRMEE" | "PAS_DE_REPONSE" | "ANNULATION_DEMANDEE";
 export type FailureReason = "INJOIGNABLE" | "REFUS" | "ADRESSE_INTROUVABLE" | "REPORTEE";
 export type MovementType =
@@ -141,6 +143,7 @@ export type Cart = {
   item_count: number;
   subtotal: number;
   exceeds_cod_limit: boolean;
+  mobile_money: boolean; // paiement en ligne disponible (sans plafond)
   can_checkout: boolean;
 };
 export type Commune = {
@@ -183,11 +186,13 @@ export type Order = {
   delivery_delay_label: string;
   subtotal: number;
   total: number;
-  payment_method: "CASH_ON_DELIVERY";
+  payment_method: PaymentMethod;
   items: OrderLine[];
   history: { status: OrderStatus; at: string }[];
   can_cancel: boolean;
+  payment_token: string | null; // mobile money non payé : permet d'ouvrir le paiement
 };
+export type PaymentState = { order_status: OrderStatus; payment_status: PaymentStatus };
 export type OrderSummary = {
   number: string;
   status: OrderStatus;
