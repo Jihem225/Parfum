@@ -1,0 +1,32 @@
+# Sauvegarde quotidienne de la base de production vers un compartiment R2 privé, en plus des
+# sauvegardes de Render. Rétention 30 jours : règle de cycle de vie du compartiment (R2).
+# Restauration : docs/09-deploiement.md.
+name: Sauvegarde
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 à Abidjan (UTC)
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  pg_dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }} # URL externe Render (postgresql://…)
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+    steps:
+      - name: Exporter et envoyer
+        run: |
+          if [ -z "$DATABASE_URL" ]; then echo "Sauvegarde non configurée (secrets absents)."; exit 0; fi
+          file="parfums-$(date -u +%Y-%m-%dT%H%M).dump"
+          docker run --rm -e DATABASE_URL postgres:17 sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL"' > "$file"
+          test -s "$file"
+          aws s3 cp "$file" "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT"
+          echo "Sauvegarde envoyée : $file ($(du -h "$file" | cut -f1))"

@@ -1,0 +1,84 @@
+# Plan Render (Blueprint) — production. Procédure complète : docs/09-deploiement.md.
+# Aucun secret ici : les valeurs « sync: false » sont saisies dans le tableau de bord Render.
+
+databases:
+  - name: parfums-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "17"
+    databaseName: parfums
+    user: parfums
+    # Accès externe (TLS + mot de passe généré) nécessaire à la sauvegarde quotidienne
+    # indépendante (.github/workflows/backup.yml) ; les services passent par le réseau privé.
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: sauvegarde GitHub Actions
+
+services:
+  - type: web
+    name: parfums-api
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install uv==0.13.5 && uv sync --frozen --no-dev
+    preDeployCommand: .venv/bin/alembic upgrade head
+    startCommand: .venv/bin/fastapi run app/main.py --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass # ne déploie que si la CI GitHub est verte
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parfums-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUSTED_PROXY_HOPS # 1 derrière Render ; 2 une fois Cloudflare en proxy (orange)
+        value: "1"
+      - key: FRONTEND_ORIGIN # https://<domaine>
+        sync: false
+      - key: ORDER_NUMBER_PREFIX
+        value: PP
+      - key: S3_ENDPOINT_URL # https://<compte>.r2.cloudflarestorage.com
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PUBLIC_BASE_URL # https://images.<domaine>
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: SHOP_NOTIFICATION_EMAIL
+        sync: false
+
+  - type: web
+    name: parfums-web
+    runtime: node
+    region: frankfurt
+    plan: starter
+    rootDir: frontend
+    buildCommand: npx --yes pnpm@11.10.0 install --frozen-lockfile && npx --yes pnpm@11.10.0 build
+    startCommand: node_modules/.bin/next start
+    healthCheckPath: /robots.txt # ne dépend pas du backend
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: BACKEND_INTERNAL_URL # réseau privé Render, jamais exposé au navigateur
+        fromService:
+          type: web
+          name: parfums-api
+          property: hostport
+      - key: NEXT_PUBLIC_SITE_URL # https://<domaine>, lu au build (sitemap, robots)
+        sync: false

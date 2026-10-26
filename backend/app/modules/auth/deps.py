@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core import security
+from app.core.config import settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.modules.auth.models import User, UserRole, UserSession
@@ -17,6 +18,14 @@ DB = Annotated[Session, Depends(get_db)]
 
 
 def client_ip(request: Request) -> str | None:
+    # En production, request.client est le relais Next.js : l'adresse du client est celle que le
+    # N-ième proxy de confiance, en partant de la fin, a ajoutée à X-Forwarded-For (le reste est
+    # falsifiable par le client).
+    if hops := settings.trusted_proxy_hops:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        chain = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if len(chain) >= hops:
+            return chain[-hops]
     return request.client.host if request.client else None
 
 

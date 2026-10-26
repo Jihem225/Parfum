@@ -65,3 +65,7 @@ Les tests du backend utilisent la base `parfums_test` (variable `TEST_DATABASE_U
 ## Intégration continue
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) exécute à chaque envoi sur `main` : lint, typage, migrations et tests du backend sur un vrai PostgreSQL 17 ; lint, typage, tests et build du frontend ; parcours navigateur de bout en bout (Chromium mobile et ordinateur).
+
+## Déploiement
+
+Render + Cloudflare (R2) + Resend, décrit par `render.yaml` ; procédure, sauvegardes et retour arrière : [docs/09-deploiement.md](docs/09-deploiement.md).

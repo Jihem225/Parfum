@@ -215,3 +215,26 @@ def test_change_password_requires_the_current_one(client: TestClient) -> None:
     )
     assert ok.status_code == 200
     assert client.get(f"{API}/me").status_code == 200  # la session courante reste ouverte
+
+
+@pytest.mark.parametrize(
+    ("hops", "forwarded", "expected"),
+    [
+        (0, "1.1.1.1", "10.0.0.5"),  # développement : adresse de la connexion
+        (1, "6.6.6.6, 1.1.1.1", "1.1.1.1"),  # Render ajoute le client ; 6.6.6.6 est falsifié
+        (2, "6.6.6.6, 1.1.1.1, 172.64.0.1", "1.1.1.1"),  # Cloudflare puis Render
+        (2, "1.1.1.1", "10.0.0.5"),  # chaîne trop courte : on ne fait pas confiance
+    ],
+)
+def test_client_ip_trusts_only_known_proxies(
+    monkeypatch: pytest.MonkeyPatch, hops: int, forwarded: str, expected: str
+) -> None:
+    from starlette.requests import Request
+
+    from app.core.config import settings
+    from app.modules.auth.deps import client_ip
+
+    monkeypatch.setattr(settings, "trusted_proxy_hops", hops)
+    headers = [(b"x-forwarded-for", forwarded.encode())]
+    request = Request({"type": "http", "headers": headers, "client": ("10.0.0.5", 1234)})
+    assert client_ip(request) == expected
