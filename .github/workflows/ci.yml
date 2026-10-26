@@ -82,6 +82,7 @@ jobs:
         run: |
           uv sync --locked
           uv run alembic upgrade head
+          uv run python -m app.scripts.seed_demo
           uv run fastapi run app/main.py --port 8000 &
           timeout 60 bash -c 'until curl -sf http://localhost:8000/api/v1/health; do sleep 1; done'
       - uses: pnpm/action-setup@v4

@@ -4,12 +4,14 @@
 @theme inline {
   --color-porcelaine: #fafaf8;
   --color-surface: #f1eee9;
+  --color-admin: #f4f2ee;
   --color-encre: #1a1613;
   --color-encre-douce: #6b635b;
   --color-filet: #e2ddd5;
   --color-safran: #9a5b13;
   --color-succes: #2f6b4f;
   --color-erreur: #7a2c1f;
+  --color-info: #27466e;
   --font-sans: var(--font-manrope), system-ui, sans-serif;
   --font-display: var(--font-bodoni), serif;
 }
@@ -18,4 +20,19 @@ body {
   background: var(--color-porcelaine);
   color: var(--color-encre);
   font-family: var(--font-sans);
+}
+
+a:hover {
+  color: var(--color-safran);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-safran);
+  outline-offset: 2px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }

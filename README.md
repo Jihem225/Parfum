@@ -52,6 +52,7 @@ La page d'accueil affiche « API : connectée » quand le frontend joint le back
 | Nouvelle migration | `uv run alembic revision --autogenerate -m "description"` | — |
 | Appliquer les migrations | `uv run alembic upgrade head` | — |
 | Créer le premier Propriétaire | `uv run python -m app.scripts.create_owner <e-mail>` | — |
+| Catalogue d'exemple (fictif, refusé en production) | `uv run python -m app.scripts.seed_demo` | — |
 
 Les tests du backend utilisent la base `parfums_test` (variable `TEST_DATABASE_URL`), jamais la base de développement.
 
