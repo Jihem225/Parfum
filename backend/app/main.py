@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -11,6 +13,8 @@ from app.core.csrf import csrf_middleware
 from app.core.db import get_db
 from app.core.errors import install_error_handlers
 from app.modules.auth.router import router as auth_router
+from app.modules.catalog.products_router import admin as products_admin_router
+from app.modules.catalog.products_router import public as products_router
 from app.modules.catalog.router import admin as catalog_admin_router
 from app.modules.catalog.router import public as catalog_router
 from app.modules.staff.router import router as staff_router
@@ -42,4 +46,10 @@ api.include_router(auth_router)
 api.include_router(staff_router)
 api.include_router(catalog_router)
 api.include_router(catalog_admin_router)
+api.include_router(products_router)
+api.include_router(products_admin_router)
 app.include_router(api)
+
+# Images du stockage local (développement) ; en production elles seront servies par R2.
+Path(settings.media_dir).mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")

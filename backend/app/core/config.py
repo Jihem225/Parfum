@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     resend_api_key: str = ""
     email_from: str = "Projet Parfums <no-reply@example.com>"
+    media_dir: str = "media"  # stockage local des images (développement)
+    media_base_url: str = "/media"
 
 
 settings = Settings()  # type: ignore[call-arg]  # valeurs lues dans l'environnement

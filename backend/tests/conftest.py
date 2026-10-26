@@ -1,4 +1,5 @@
 import os
+import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -12,6 +13,7 @@ os.environ["APP_ENV"] = "test"
 os.environ.setdefault("SECRET_KEY", "secret-de-test-uniquement")
 os.environ["COOKIE_SECURE"] = "false"
 os.environ["RESEND_API_KEY"] = ""
+os.environ["MEDIA_DIR"] = tempfile.mkdtemp(prefix="parfums-media-")
 
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
