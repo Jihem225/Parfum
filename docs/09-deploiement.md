@@ -97,3 +97,22 @@ Chaque étape marquée ⚠ est publique ou payante : elle se fait avec l'accord 
 - **Retour arrière du code** : Render → service → *Events* → *Rollback* sur le déploiement précédent.
 - **Migrations** : écrites pour rester compatibles avec la version précédente du code (ajouts d'abord, suppressions dans une version ultérieure). Un retour arrière ne défait donc pas la migration.
 - **Données** : restauration (§6) seulement en dernier recours ; les commandes passées depuis la sauvegarde seraient perdues.
+
+## 9. Activer le mobile money (quand le prestataire est choisi)
+
+Le code est prêt mais **désactivé en production** : `PAYMENT_PROVIDER` vide. La simulation y est refusée au démarrage.
+
+1. **Choisir le prestataire** ⚠ (porteur) : moyens couverts (Orange Money, MTN MoMo, Moov, Wave…), frais, délai de reversement, remboursement par API ou depuis leur tableau de bord. Ouvrir le compte marchand.
+2. **Brancher le prestataire** (développement, sur une branche) dans `backend/app/modules/payments/providers.py` :
+   - une classe avec `checkout_url(numéro, montant, url_de_retour)` (création de la transaction chez le prestataire) et `read(octets, en-têtes)` (vérification de **leur** signature, puis lecture du numéro, du montant, du résultat et de la référence) ;
+   - ajouter son nom aux valeurs permises de `payment_provider` dans `backend/app/core/config.py` et à `get_provider()` ;
+   - tests sur le modèle de `backend/tests/test_mobile_money.py`, avec des avis enregistrés depuis leur environnement de test.
+3. **Configurer** ⚠ :
+   - Render, service `parfums-api` : `PAYMENT_PROVIDER` et `PAYMENT_WEBHOOK_SECRET` (clé de signature fournie par le prestataire), plus d'éventuelles clés d'API du prestataire ;
+   - chez le prestataire : adresse des avis `https://<domaine>/api/v1/payments/notifications` (relayée telle quelle par le site vers l'API) et adresse de retour du site.
+4. **Vérifier** avec un vrai petit paiement : commande « Confirmée » sans appel, e-mails reçus, livreur « rien à encaisser » ; puis une commande non payée annulée après 30 minutes ; puis un remboursement.
+5. **Mettre à jour les textes du site**, qui annoncent encore le paiement à la livraison seul :
+   - bandeau (`frontend/src/components/boutique/header.tsx`) et description du site (`frontend/src/app/layout.tsx`) ;
+   - accueil (`frontend/src/app/(boutique)/page.tsx`, « Paiement à la livraison ») et fiche produit (`parfums/[slug]/page.tsx`) ;
+   - pages **Livraison et paiement**, **Retours** et **FAQ** (`infos/[page]/page.tsx`) : moyens de paiement, plafond réservé aux espèces, refus d'un colis déjà payé (remboursement) ;
+   - CGV : paiement en ligne et remboursement (à faire relire par le juriste).

@@ -23,7 +23,7 @@
 - Catalogue par collections, recherche sans accents, filtres et tri.
 - Fiches produit 30/50/100 ml avec stock affiché.
 - Panier visiteur ou client, commande sans compte, confirmation, suivi par numéro + téléphone.
-- Paiement à la livraison.
+- Paiement à la livraison ; mobile money prêt (étape 11), à activer avec un prestataire réel.
 - Compte client : adresses, commandes, annulation.
 - Contact, pages d'information, sitemap.
 
@@ -54,11 +54,12 @@
 | Frontend Vitest | 11/11 réussis |
 | Parcours E2E Playwright (mobile + ordinateur) | 18/18 réussis |
 | Lint, typage strict (mypy, TypeScript), build | OK |
-| Non exécutés | paiement en ligne (aucun prestataire, hors MVP) ; écran de retour / remboursement dans le navigateur (couvert en API) ; vrai téléphone et Safari ; charge ; services réels R2, Resend et Render (comptes à créer) |
+| Mobile money (étape 11, local, commit 2c6d568) | backend 156/156, Vitest 12/12, E2E 24/24 (dont 3 parcours mobile money × 2 appareils), avec le prestataire de simulation |
+| Non exécutés | paiement avec un vrai prestataire (pas encore choisi) ; écran de retour / remboursement dans le navigateur (couvert en API) ; vrai téléphone et Safari ; charge ; services réels R2, Resend et Render (comptes à créer) |
 
 ## Limites connues
 
-- **Paiement** : à la livraison uniquement. Le mobile money (Orange, MTN, Wave) et la carte sont à intégrer plus tard, derrière l'interface prévue.
+- **Paiement** : en production, à la livraison uniquement tant qu'aucun prestataire de mobile money n'est branché. Le parcours complet existe et est testé avec un prestataire simulé ; brancher le vrai : `docs/09-deploiement.md` §9. La carte bancaire reste à faire.
 - **Contenus provisoires** : nom « Projet Parfums », préfixe `PP`, textes légaux marqués « [À compléter …] » (CGV, mentions légales, confidentialité : à faire relire par un juriste), photos.
 - **Hors MVP** : avis, favoris, codes promo, bannières, newsletter, paniers abandonnés, permissions fines, multi-pays.
 - **Exploitation** :
@@ -74,7 +75,7 @@
   - Restent deux lenteurs ou surconsommations mémoire possibles via un PNG piégé, envoyé uniquement par un Gestionnaire ou le Propriétaire connecté.
   - **Passer à Pillow 13 à partir du 2026-10-30** (règle des 14 jours du projet) et relancer les tests.
 - **Outillage** :
-  - tests E2E exécutés uniquement en CI (Chromium indisponible sur macOS 13) ;
+  - tests E2E : en CI, et en local depuis le passage au poste macOS 26 (2026-10-26) ;
   - CI parfois lente (miroir Ubuntu pour Chromium) ;
   - ESLint 9 à faire passer en 10 quand Next.js le permettra.
 
@@ -89,7 +90,7 @@
 | Avant chaque évolution | Garder les migrations compatibles avec la version précédente (ajouter, puis supprimer dans une version ultérieure) ; ne jamais désactiver la CI pour déployer. |
 
 **Évolutions suggérées, par ordre d'utilité :**
-1. Mobile money.
+1. Brancher le prestataire de mobile money (`docs/09-deploiement.md` §9).
 2. Sentry.
 3. File de réessai des e-mails.
 4. Codes promo.

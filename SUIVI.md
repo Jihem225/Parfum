@@ -4,7 +4,7 @@ Document de reprise : à lire en premier après toute interruption.
 
 ## Étape actuelle
 
-**Étape 11 — Mobile money** (hors prompt, demandée le 2026-10-26 ; mise en ligne repoussée à la fin par le porteur) : 11.1 backend **validée le 2026-10-26** (« continue ce projet ») ; 11.2 frontend **validée le 2026-10-26** (« valide ») ; **11.3 documentation en cours**.
+**Étape 11 — Mobile money** (hors prompt, demandée le 2026-10-26 ; mise en ligne repoussée à la fin par le porteur) : 11.1 backend **validée le 2026-10-26** (« continue ce projet ») ; 11.2 frontend **validée le 2026-10-26** (« valide ») ; 11.3 documentation **validée le 2026-10-26** (« valide »). **Étape 11 terminée** ; reste la mise en ligne.
 
 Décisions du porteur (2026-10-26) : prestataire **pas encore choisi** → interface neutre + prestataire de simulation (développement / CI, refusé en production) ; **pas de plafond** de 300 000 FCFA pour le mobile money ; commande payée = **Confirmée sans appel** ; non payée en **30 minutes** = annulée, stock libéré.
 
@@ -110,6 +110,7 @@ Reporté après le MVP : mobile money (Orange, MTN, Wave), carte bancaire, avis,
   - 7.4 back-office `src/app/admin/` : connexion (2FA), activation 2FA, tableau de bord, commandes (+ impression bon / bordereau), produits, collections et familles, stock et mouvements, encaissements, clients, messages, paramètres, collaborateurs, journal ;
   - 7.5 livreur `src/app/livreur/` : connexion, mes livraisons, livrée et encaissée, échec ;
   - tests : `src/lib/*.test.ts` (Vitest), `e2e/{boutique,compte,backoffice}.spec.ts` + `e2e/order.ts` (Playwright, CI ; étape 8 : recherche, rupture, annulation client, accès back-office).
+- Étape 11.3 : `docs/02-conception-fonctionnelle.md` §11 (RG-50 à RG-56, statuts, écrans), `docs/03-conception-technique.md` §7 (routes mobile money), `docs/09-deploiement.md` §9 (activer un prestataire réel, textes du site à changer), `docs/10-guide-back-office.md` (commandes payées, remboursement), `docs/10-bilan.md`. Textes publics du site **volontairement inchangés** (« paiement à la livraison ») : le mobile money reste désactivé en production tant qu'aucun prestataire n'est branché.
 - Étape 11.2 : `frontend/src/app/(boutique)/commande/` (choix du paiement, redirection, `paiement/` page de retour et nouvel essai, `confirmee` « payée »), `frontend/src/app/paiement/simulation/` (faux prestataire), `frontend/src/components/{pay-button,order-view}.tsx`, panier, compte, back-office (onglet « En attente de paiement », moyen de paiement, livraison sans encaissement, remboursement d'un paiement reçu sur une commande annulée, bordereau), livreur (« rien à encaisser »), `src/lib/{types,format,schemas}.ts`, `e2e/paiement.spec.ts` + scénario mobile money dans `e2e/backoffice.spec.ts`, CI (`PAYMENT_PROVIDER=simulation` dans le job e2e), `backend/tests/conftest.py` (tests isolés du `.env` local).
 - Étape 11.1 : `backend/app/modules/payments/providers.py`, `backend/app/modules/orders/{service,router,schemas,notify,jobs}.py`, migration `0003_mobile_money`, `backend/app/core/{config,csrf}.py`, `backend/app/main.py` (tâche d'expiration), panier et livreur, `backend/tests/test_mobile_money.py`.
 - Étape 10 : `docs/10-bilan.md`, `docs/10-guide-back-office.md`, `docs/03-conception-technique.md` (§8, §12 à jour), `backend/app/core/images.py` (décodeurs limités).
@@ -214,7 +215,7 @@ Niveaux : **API** = tests d'intégration pytest sur une vraie base PostgreSQL ; 
 
 ## Prochaine action
 
-11.3 (documentation : guide du back-office, bilan, docs/03 et docs/09 pour le futur prestataire réel ; bandeau et description du site encore « paiement à la livraison »). Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
+Commits 11.2 (2c6d568) et 11.3 **non poussés** : `gh auth login` à faire sur le nouveau poste, puis `git push`. Ensuite : choix du prestataire de mobile money (docs/09 §9) et mise en ligne. Mise en ligne en fin de projet, quand le porteur fournit le domaine et les comptes et tranche la préproduction : `docs/09-deploiement.md` §3, chaque action publique ou payante avec son accord.
 À partir du 2026-10-30 : passer Pillow 12.3.0 → 13.0.0 (vulnérabilités, voir docs/10-bilan.md).
 
 Environnement local : macOS 13, Node 22, pnpm 11 (Corepack), Python 3.13 via uv (`~/Library/Python/3.9/bin/uv`), PostgreSQL 17.11 via Postgres.app ; pas de Docker.

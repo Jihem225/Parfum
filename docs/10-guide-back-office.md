@@ -16,7 +16,7 @@ Pour le Propriétaire, les Gestionnaires et les livreurs. Adresse : `https://<do
 
 | Rôle | Peut |
 |---|---|
-| Propriétaire | tout, plus : **Boutique et livraison**, **Collaborateurs**, **Journal d'audit**, retour d'une commande livrée |
+| Propriétaire | tout, plus : **Boutique et livraison**, **Collaborateurs**, **Journal d'audit**, retour d'une commande livrée, remboursement d'un paiement mobile money |
 | Gestionnaire | commandes, produits, collections, stock, encaissements, clients, messages |
 | Livreur | voir **ses** livraisons, déclarer « livrée et encaissée » ou un échec |
 
@@ -37,6 +37,18 @@ Le **Tableau de bord** indique combien de commandes attendent à chaque statut. 
    - refus ou adresse introuvable, ou deux tentatives déjà faites : le colis revient à la boutique. Enregistrez-le comme un retour (ci-dessous), sans remboursement.
 
 **Annuler** : possible tant que la commande n'est pas partie en livraison, avec un motif obligatoire dans « Note ou motif ». Le client peut aussi annuler lui-même depuis son compte, dans les mêmes conditions.
+
+## Commandes payées par mobile money
+
+Seulement quand le paiement en ligne est activé (voir `docs/09-deploiement.md` §9). Sur la commande, la ligne **Paiement** indique le moyen : « Espèces à la livraison » ou « Mobile money ».
+
+- **En attente de paiement** : le client n'a pas encore payé. Rien à faire : la commande passe seule à **Confirmée** au paiement, ou est annulée 30 minutes après sa création (stock libéré).
+- **Confirmée** et « Mobile money · Payé » : **pas d'appel de confirmation**. Passez directement en préparation, puis confiez au livreur comme d'habitude.
+- **Livraison** : le livreur voit « Déjà payée · rien à encaisser » et confirme simplement la remise ; le bordereau l'indique aussi. Ces commandes n'apparaissent pas dans les Encaissements.
+- **Paiement à rembourser** : une commande payée puis annulée (par le client, par vous, ou paiement arrivé après le délai) affiche cette carte. Dans ce dernier cas, la boutique reçoit aussi un e-mail « À rembourser ».
+  1. Remboursez le client depuis le tableau de bord du prestataire.
+  2. Le Propriétaire saisit le **Montant remboursé** (et la référence du remboursement en note), puis **Enregistrer le remboursement**. C'est définitif.
+- **Retour d'une commande livrée payée par mobile money** : comme ci-dessous, le montant est remboursé chez le prestataire au lieu d'espèces.
 
 ## Récupérer l'argent des livreurs (Encaissements)
 
@@ -83,5 +95,5 @@ Dans la commande : **Retour client et remboursement** (colis revenu après un é
 
 ## Règles à connaître
 
-- Au plus 5 flacons d'un même parfum par commande. Total maximum en paiement à la livraison : 300 000 FCFA.
+- Au plus 5 flacons d'un même parfum par commande. Total maximum en paiement à la livraison : 300 000 FCFA (pas de plafond en mobile money).
 - Les prix affichés au client sont recalculés au moment de valider sa commande. Si un prix a changé entre-temps, le client voit le nouveau total avant de confirmer.

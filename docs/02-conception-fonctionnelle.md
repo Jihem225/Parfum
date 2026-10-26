@@ -14,7 +14,9 @@ Base : cadrage validé le 2026-10-26 (voir [`SUIVI.md`](../SUIVI.md)). Les élé
 - Livraison par **livreurs internes**, tarif par commune.
 - Commande **avec ou sans compte** ; numéro de téléphone obligatoire.
 
-Hors MVP (prévu dans le modèle, pas développé) : mobile money, carte bancaire, avis, favoris, codes promo, bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays, prix barrés.
+Évolution après le MVP : **mobile money** (étape 11, §11), prêt mais désactivé tant que le prestataire n'est pas choisi.
+
+Hors MVP (prévu dans le modèle, pas développé) : carte bancaire, avis, favoris, codes promo, bannières administrables, newsletter, paniers abandonnés, permissions granulaires, multi-pays, prix barrés.
 
 ---
 
@@ -226,7 +228,7 @@ Toute autre transition est refusée par le serveur. Chaque transition est histor
 | **Annulé** | La commande a été annulée ou n'a pas été livrée. |
 | **Remboursé** | Remboursement après retour d'une commande livrée. |
 
-Le moyen de paiement est enregistré (« Espèces à la livraison » au MVP) pour accueillir le mobile money plus tard sans changer ces statuts.
+Le moyen de paiement est enregistré (« Espèces à la livraison » ou « Mobile money ») ; le mobile money ajoute deux statuts (§11).
 
 ---
 
@@ -406,3 +408,34 @@ Les permissions sont vérifiées **côté serveur** pour chaque action ; l'inter
 6. **Communes desservies** au lancement, avec frais et délais.
 7. **Contenances** proposées (30 / 50 / 100 ml ? autres formats, coffrets ?).
 8. **Familles olfactives** utilisées pour classer tes parfums.
+
+---
+
+## 11. Évolution : paiement mobile money (étape 11, 2026-10-26)
+
+Décisions du porteur : prestataire **pas encore choisi** (interface neutre et prestataire de simulation pour le développement) ; pas de plafond pour le mobile money ; commande payée = confirmée sans appel ; non payée en 30 minutes = annulée.
+
+### Règles
+
+- **RG-50** Le client choisit à la commande : **espèces à la livraison** ou **mobile money**. Le choix n'apparaît que si le paiement en ligne est activé.
+- **RG-51** Le plafond de 300 000 FCFA (RG-23) ne vaut que pour le paiement à la livraison. Au-delà, seul le mobile money est proposé.
+- **RG-52** Une commande mobile money réserve le stock dès sa création, au statut **En attente de paiement**, puis le client est envoyé sur la page de paiement du prestataire.
+- **RG-53** Paiement reçu (avis signé du prestataire, montant identique au total) : commande **Confirmée** sans appel téléphonique ; e-mails client et boutique envoyés à ce moment-là.
+- **RG-54** Paiement refusé ou abandonné : la commande reste en attente, le client peut réessayer depuis la page de retour ou le suivi. **Sans paiement 30 minutes après la création, la commande est annulée** et le stock libéré.
+- **RG-55** Le livreur n'encaisse rien sur une commande payée ; elle n'apparaît pas dans les encaissements.
+- **RG-56** Commande payée puis annulée (par le client, la boutique, ou paiement arrivé après l'expiration) : le paiement reste « Payé » ; le Propriétaire rembourse chez le prestataire, puis enregistre le remboursement dans le back-office. Un retour après livraison est remboursé de la même façon.
+
+### Statuts ajoutés
+
+| Statut | Signification |
+|---|---|
+| Commande **En attente de paiement** | Mobile money non encore payé ; devient Confirmée (paiement) ou Annulée (client, boutique, délai de 30 minutes). |
+| Paiement **À payer** | Mobile money attendu. |
+| Paiement **Payé** | Mobile money reçu ; devient **Remboursé** après un remboursement enregistré. |
+
+### Écrans ajoutés
+
+- Commande : choix du paiement ; page **Paiement** (retour du prestataire : en attente, nouvel essai, annulée) ; confirmation « paiement reçu ».
+- Suivi et compte : bouton **Payer** tant que la commande attend son paiement.
+- Back-office : onglet **En attente de paiement**, moyen de paiement sur la commande, carte **Paiement à rembourser**.
+- Livreur : « Déjà payée · rien à encaisser ».

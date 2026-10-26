@@ -314,7 +314,17 @@ Documentation OpenAPI générée automatiquement (`/api/v1/docs`, désactivée e
 
 **Livreur** : GET `/courier/deliveries` ; POST `/courier/deliveries/{number}/delivered`, `/courier/deliveries/{number}/failed`.
 
-**Webhooks** : aucun au MVP (pas de prestataire de paiement). Le module `payments` est prévu pour accueillir un prestataire mobile money : route `/webhooks/{prestataire}` avec vérification de signature et idempotence, ajoutée le moment venu.
+**Mobile money** (étape 11) :
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| POST | `/orders/{number}/payment` | ouvre la page de paiement du prestataire (`{token}` → `{url}`) |
+| GET | `/orders/{number}/payment?token=` | état de la commande et du paiement (page de retour) |
+| POST | `/payments/notifications` | avis du prestataire : sans cookie, exempté du CSRF, signature vérifiée sur les octets bruts, idempotent, montant contrôlé |
+| POST | `/payments/simulation/{number}` | simulation uniquement (`PAYMENT_PROVIDER=simulation`) : produit l'avis signé |
+| POST | `/admin/orders/{number}/refund` | remboursement enregistré d'une commande payée puis annulée (Propriétaire) |
+
+Le jeton `token` (HMAC du numéro avec `SECRET_KEY`) est remis à l'acheteur avec la commande : sans lui, on ne peut ni payer ni lire l'état du paiement. Les prestataires sont derrière deux opérations (`checkout_url`, `read`) dans `backend/app/modules/payments/providers.py`. Une tâche de fond annule les commandes non payées après 30 minutes. Côté frontend : `/commande/paiement` (retour), `/paiement/simulation` (faux prestataire).
 
 ---
 
